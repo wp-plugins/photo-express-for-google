@@ -1,0 +1,91 @@
+/* add the classes for image and caption alignment */
+.peg-album.alignleft, .peg-photo.alignleft, .wp-caption.alignleft {
+    float: left;
+    margin: 0px;
+}
+
+.peg-album.alignright, .peg-photo.alignright, .wp-caption.alignright {
+    float: right;
+    margin: 0px;
+}
+
+.peg-album.aligncenter, .peg-photo.aligncenter, .wp-caption.aligncenter {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* correct the image spacing when captions are on */
+div.wp-caption {
+    padding: 2px;
+    margin-right: 2px;
+    margin-bottom: 2px;
+}
+
+.peg-album div.wp-caption {
+    padding: 1px;
+    margin-right: 1px;
+    margin-bottom: 1px;
+}
+
+/* add the border and spacing for our images */
+img.peg-photo:hover, .peg-album img:hover {
+    border-color: red;
+}
+
+img.peg-photo {
+    border: 1px solid #e6e6e6;
+    padding: 1px;
+    margin-right: 2px;
+    margin-bottom: 2px;
+}
+
+.peg-album img {
+    border: 1px solid #e6e6e6;
+    padding: 0px;
+    margin-right: 1px;
+    margin-bottom: 1px;
+}
+
+.peg-album {
+    padding-bottom: 20px;
+}
+
+/* add the classes for the phototile album */
+.peg-phototile.alignleft img {
+    float: left;
+}
+
+.peg-album.peg-phototile img {
+    padding-left: auto;
+    padding-right: auto;
+}
+
+/* add the clear class for the P tag inserted after batches */
+p.clear {
+    clear: both;
+}
+
+/* play overlay stuff */
+div.play_overlay_wrapper {
+    position: relative;
+    display: block;
+}
+
+span.play_overlay {
+    float: left;
+    width: 0px;
+    height: 0px;
+    background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACEAAAAhCAYAAABX5MJvAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA8xJREFUWMO9mMtLG1EUhx2b%2BIy12tJ1H6no2hduXLhz5R%2Fgum5EdONCaKFCNzVYSKtEIj5aEUWNibbFSgtNG10VFy1RF1IolCiStJqX5jWTnhvuleP1TmZixAs%2FJhmGnG%2FOPa8bqeD8kjS%2BpwsuLtG9nJak8yoyqnbNC0JNhRxANl0KRmRQJN4TikAioJwhiLEbKsIg2LBMlcoHRgRgABnR1UjvSwgCGydK0qss8I7mFuEtMFAVMQ0MDNwHWefn5192dXV5OQhmnCiOPstIip54wV4wUuPFVKXd3d33rFbrR%2FKgz%2BfbsFgsUyMjI7%2BRBxIUIEavceQV3jOqMAyCuT1jnKq8s7PzweTkpOMsItNpZXt7293X1zfr8Xj8COAEdIpgEhwM854wkyQUBwygjACAKjo6OsywFW9596VSqeTm5uannp4e197eXgBuRSkIg4kjmATyiiwI3jMI4oUSCmEiAKDK9vZ28%2BLiol0toGKx2Ml7WL29vR%2BCweAxhYlm8YzMbVHGGwyiiEKUU4hKUFVbW9sjp9P5SivFwuHwETznBM%2BQ%2BAmDIgiIwYhA0gzCgCCYF6pA1a2trTUul8uit%2BgEAoE%2Fs7AGBwc98DVEYSJZQC5AlGIvgO60tLTUrq6uPs%2B1DB8eHu6Mj4%2FbILO2KAz2CF9TzkGUUYhbxAsEoqmpqW5lZeXZZRsTpPWXiYkJq81m26EgLEZY1mRagMRlRgWCuNvY2FgHW%2F00nzatKEp8fX39MSw3ypwkSt20GsRtAlFfX1%2B3vLz8JA9PbExPT7%2B22%2B1eLjZ0QVQziIWFhZw9cXBw8Au2YQrWd%2Fh6zMWFqieEMUEg5ubmdMeE3%2B8PwPPvoLST7DhCAGE9MSHMjoaGhtqZmRnN7AiFQtGlpaVv0Fu%2BUsPHHEBEb3ZcqBPNzc014FbVOhGPxxNQMLeGh4c9APIXbgWpQqhOsAqatU7wFZNA3CQgUCdqxsbGrIKIl91u9w94c8%2F%2B%2Fv4%2F9MbMcJjrJ7jDCiumau%2BAimmGgnOud%2FyEBcY%2Fe73eAP3hKKqMEWT4JNfeYURxcdZFoXeYh4aGMl0U3ngXio5rbW3NR38oSY2cco0rxhnX1UVF8wQBKYMu%2BrC%2Fv%2F%2BFw%2BF4Mzo6uotmTRlNVKc5GFfU5gnRZEW2psRkMpVHIpFiep%2FNmWkEwU9W2HjOk1UhN9gWcaOeAXkhzc2YCRXjMjoeaM6Y2BsGJDxx89O2ggxeybQtoQlLdPYwoGfS6O1kgfI6d2idwCTuGHjlJ7ACjXOodB1nUb1XrdN43qdytb8BruX%2Fif%2FC7W9DSu%2F6rwAAAABJRU5ErkJggg%3D%3D") no-repeat scroll center center rgba(0, 0, 0, 0.6);
+    -moz-transition: background-color 0.25s linear 0s;
+    opacity: .75;
+}
+
+span.play_overlay:hover {
+    opacity: .50;
+}
+
+#peg-main a span.play_overlay {
+    /* fix the a span from photo-express.css */
+    padding: 0px;
+}

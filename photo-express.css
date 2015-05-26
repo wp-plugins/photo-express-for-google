@@ -1,0 +1,95 @@
+/* main dialog style */
+.peg-header {
+    padding: 6px;
+    background: #eaf2fa;
+    position: fixed;
+    width: 640px;
+    top: 0;
+    left: 0;
+}
+
+#peg-options {
+    padding: 38px 6px;
+    width: 652px;
+    background: white;
+}
+
+#peg-message1, #peg-message2, #peg-message3 {
+    padding: 4px 10px;
+}
+
+#peg-main {
+    padding: 38px 0 0;
+    width: 652px;
+    background: white;
+}
+
+#peg-main table {
+    border: 0;
+    margin: 2px 6px;
+    text-align: center;
+}
+
+
+#peg-main td {
+    vertical-align: top;
+    cursor: pointer;
+    border: 1px solid white;
+}
+
+#peg-main table a {
+    text-decoration: none;
+}
+
+#peg-main td:hover {
+    background: #f1f1f1;
+}
+
+#peg-main td.selected {
+    background: #eee;
+    border: 1px solid #d54e21;
+}
+
+#peg-main a img, #peg-main a span {
+    padding: 5px;
+    display: block;
+    text-align: center;
+    width: 144px;
+    font-size: 10px;
+    line-height: 10px;
+}
+
+#peg-main div.numbers {
+    position: absolute;
+    top: 1;
+    left: 1;
+    width: 144px;
+    height: 144px;
+    z-index: 100;
+    opacity: 0.5;
+    font-size: 30px;
+    color: black;
+    text-shadow: white -1px 0, white 1px 0, white 0 -1px, white 0 1px;
+    text-align: right;
+    padding: 10px 0;
+}
+
+.peg-space {
+    margin-left: 10px;
+}
+
+.peg-form-table input:disabled{
+    background-color: #eee;
+}
+.image-align-none-label {
+    background: url(../../../wp-admin/images/align-none.png) no-repeat center left;
+}
+.image-align-left-label {
+    background: url(../../../wp-admin/images/align-left.png) no-repeat center left;
+}
+.image-align-center-label {
+    background: url(../../../wp-admin/images/align-center.png) no-repeat center left;
+}
+.image-align-right-label {
+    background: url(../../../wp-admin/images/align-right.png) no-repeat center left;
+}

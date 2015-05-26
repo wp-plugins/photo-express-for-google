@@ -1,0 +1,12 @@
+#peg-main table {
+    margin: 2px 10px;
+}
+
+*:first-child + html #peg-main div.numbers {
+    width: 67px;
+}
+
+#peg-main div.numbers {
+    filter: alpha(opacity=50);
+    filter: glow(color=#ffffff, strength=3);
+}
