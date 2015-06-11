@@ -77,8 +77,9 @@ if (!class_exists( "Google_Photo_Access" )) {
 		    }
 	    }
 	    function check_for_revoke(){
-		    //TODO Make revoking more secure!!!
 		    if (isset($_GET['revoke'])) {
+			    //Check if it is an authorized call
+			    check_admin_referer('peg_revoke_authorization');
 			    $this->revoke_authorization();
 			    //Redirect
 			    $this->redirect_to_settings();
@@ -198,7 +199,7 @@ if (!class_exists( "Google_Photo_Access" )) {
 					);
 					Common::make_settings_row(
 						__('Revoke Google OAuth 2 Access token'),
-						'<a href="'.admin_url('options-general.php').'?page=photo-express&revoke=true">Click here to revoke the token</a>'
+						'<a href="'.wp_nonce_url( admin_url('options-general.php').'?page=photo-express&revoke', 'peg_revoke_authorization').'">Click here to revoke the token</a>'
 
 					);
 				}
