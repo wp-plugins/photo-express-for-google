@@ -1086,10 +1086,7 @@ jQuery('document').ready(function(){
          */
         function settings_form()
         {
-	        $this->picasaAccess->check_for_authorization_code();
-
-
-            if (
+	        if (
                 (isset($_GET['updated']) && 'true' == $_GET['updated']) ||
                 (isset($_GET['settings-updated']) && 'true' == $_GET['settings-updated'])
             ) {
@@ -1109,7 +1106,6 @@ jQuery('document').ready(function(){
                 }
 
             }// end successful settings update
-			$this->picasaAccess->check_for_revoke();
 
 
             if (isset($_GET['message']) && $_GET['message']) {
@@ -1124,7 +1120,6 @@ jQuery('document').ready(function(){
                 <h2><?php _e('Photo Express for Google', 'peg')?></h2>
 
                 <?php
-		        settings_errors();
                 if (isset($message) && $message) {
                     echo '<div id="picasa-express-x2-message" class="updated"><p><strong>' . $message . '</strong></p></div>';
                 }

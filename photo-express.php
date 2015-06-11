@@ -107,6 +107,7 @@ if(!class_exists( 'Photo_Express' )){
 		}
         function hook_media_browser(){
             if(is_admin()){
+
                 // Add media button to editor
                 add_action('media_buttons', array(&$this->browser, 'add_media_button'), 20);
 
@@ -118,13 +119,14 @@ if(!class_exists( 'Photo_Express' )){
                 add_action('wp_ajax_peg_get_images', array(&$this->browser, 'get_images'));
                 add_action('wp_ajax_peg_save_state', array(&$this->browser, 'save_state'));
                 add_action('wp_ajax_peg_process_shortcode', array(&$this->browser, 'peg_process_shortcode'));
-
-
-
             }
         }
 		function hook_admin(){
 			if (is_admin()) {
+				//Add check routine for authorization
+				add_action('admin_init', array(&$this->access, 'check_for_authorization_code'));
+				add_action('admin_init', array(&$this->access, 'check_for_revoke'));
+
 				// loading localization if exist
 				add_action('init', array(&$this->admin, 'load_textdomain'));
 

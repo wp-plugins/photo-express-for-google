@@ -80,17 +80,27 @@ if (!class_exists( "Google_Photo_Access" )) {
 		    //TODO Make revoking more secure!!!
 		    if (isset($_GET['revoke'])) {
 			    $this->revoke_authorization();
+			    //Redirect
+			    $this->redirect_to_settings();
 		    }
+	    }
+	    function redirect_to_settings(){
+		    //First preserve all errors that have been generated
+		    set_transient('settings_errors', get_settings_errors(), 30);
+		    //Call settings url
+		    wp_redirect($this->get_redirect_url().'&settings-updated=true');
 	    }
 	    function check_for_authorization_code(){
 		    //First check if we are receiving an authorization code
-		    if(isset($_GET['code'])){
+		    $currScreen = get_current_screen();
+		    if(isset($_GET['page']) && $_GET['page'] == 'photo-express' && isset($_GET['code'])){
 			    //Try to get an authorization token
-			    $error = $this->request_token($_GET['code']);
-			    if($error){
-				    echo $error;
-			    }
+			    $this->request_token($_GET['code']);
+			    //redirect
+			    $this->redirect_to_settings();
 		    }else if(isset($_GET['error'])){
+			    //Integrate the error in a human readable message
+
 			    echo $_GET['error'];
 		    }
 
@@ -251,6 +261,9 @@ if (!class_exists( "Google_Photo_Access" )) {
 			    $response = wp_remote_get('https://accounts.google.com/o/oauth2/revoke?token='.$tokenToRevoke);
 			    if(is_wp_error($response)){
 				    add_settings_error('peg_oauth_settings', 'revoke_failed', 'The OAuth2 token could not be revoked. An error occurred. Please go to "https://accounts.google.com/b/0/IssuedAuthSubTokens" to revoke it manually. Error Message: '.$response->get_error_message());
+			    }else{
+				    add_settings_error('peg_oauth_settings','revoke_successful', 'The OAuth2 token has been revoked.', 'updated');
+
 			    }
 			    $this->access_token = '';
 			    $this->refresh_token = '';
@@ -328,11 +341,16 @@ if (!class_exists( "Google_Photo_Access" )) {
 					'grant_type' => 'refresh_token'
 				)
 			));
-			$json_token = json_decode($response['body']);
-			if(isset($json_token->error)){
-				error_log('Could not refresh the OAuth 2 access token. Error message: '.$json_token->error.'. Error description: '.$json_token->error_description);
+			//Check if there is an error
+			if(is_wp_error($response)){
+				error_log('Could not refresh the OAuth 2 access token. Message: '.$response->get_error_message());
 			}else {
-				$this->store_access_token($json_token);
+				$json_token = json_decode( $response['body'] );
+				if ( isset( $json_token->error ) ) {
+					error_log( 'Could not refresh the OAuth 2 access token. Error message: ' . $json_token->error . '. Error description: ' . $json_token->error_description );
+				} else {
+					$this->store_access_token( $json_token );
+				}
 			}
 		}
         /**
