@@ -454,7 +454,7 @@
 
     function peg_make_image_shortcode(case_selector) {
 
-        var codes = [], code, icaption, ihref, isrc, ialt, ititle, ilink, iorig, item_type;
+        var codes = [], code, icaption, ihref, isrc, ialt, ititle, ilink, iorig, item_type, imageSize;
 
         // begin the attributes to add to the shortcode
         var attributes = '';
@@ -488,11 +488,11 @@
             ialt = $('img', this).attr('alt');
             ilink = $('a', this).attr('href');
             item_type = $('img', this).attr('type');
-
+            imageSize = $('a',this).attr('data-size');
             // create the shortcode adding in any common attributes overridden by
             // the "Options" page in the image selection window
             code = '[peg-image src="' + isrc + '" href="' + ihref + '" caption="' +
-            icaption + '" type="' + item_type + '" alt="' + ialt + '" ' + attributes + ']';
+            icaption + '" type="' + item_type + '" alt="' + ialt + '" image_size="' + imageSize +'" ' + attributes + ']';
 
             // add this image's shortcode to our array of image shortcodes to join together
             if (order) {

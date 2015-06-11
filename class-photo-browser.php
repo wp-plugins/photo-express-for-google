@@ -64,7 +64,7 @@ if (!class_exists("Photo_Browser")) {
                 $user = $_POST['user'];
             } else die();
 
-            $rss = $this->picasaAccess->get_feed("http://picasaweb.google.com/data/feed/base/user/$user?alt=rss&kind=album&hl=en_US");
+            $rss = $this->picasaAccess->get_feed("http://picasaweb.google.com/data/feed/api/user/$user?alt=rss&kind=album&hl=en_US");
             if (is_wp_error($rss)) {
                 $out->error = $rss->get_error_message();
             } else if (!Common::get_item($rss, 'atom:id')) {
@@ -183,6 +183,8 @@ if (!class_exists("Photo_Browser")) {
                             'desc' => Common::escape(Common::get_item($item, 'media:description')),
                             'item_type' => (strpos($item, 'medium=\'video\'') !== false ? 'video' : 'image'),
                             'url' => str_replace('s72', 's144' . $dialog_crop . '-o', Common::get_item_attr($item, 'media:thumbnail', 'url')),
+	                        'width' => Common::get_item($item, 'gphoto:width'),
+	                        'height' => Common::get_item($item, 'gphoto:height')
                         );
                     }
                     if ($this->options['peg_img_asc']) ksort($images);
@@ -190,7 +192,7 @@ if (!class_exists("Photo_Browser")) {
                     $output .= "\n<table><tr>\n";
                     $i = 0;
                     foreach ($images as $item) {
-                        $output .= "<td><a href='{$item['album']}'><img src='{$item['url']}' alt='{$item['file']}' type='{$item['item_type']}' title='{$item['desc']}' /><span>{$item['title']}</span></a></td>\n";
+                        $output .= "<td><a href='{$item['album']}' data-size='{$item['width']}x{$item['height']}'><img src='{$item['url']}' alt='{$item['file']}' type='{$item['item_type']}' title='{$item['desc']}' /><span>{$item['title']}</span></a></td>\n";
                         if ($i++ % 4 == 3) $output .= "</tr><tr>\n";
                     }
                     $output .= "</tr></table>\n";

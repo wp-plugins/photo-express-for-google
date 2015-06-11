@@ -41,9 +41,7 @@ if (!class_exists("Settings_Storage")) {
             'peg_title' => 1,
             'peg_parse_caption' => 1,
             'peg_link' => 'photoswipe',
-            'peg_photoswipe_caption_num' => '1',
-            'peg_photoswipe_caption_view' => '1',
-            'peg_photoswipe_caption_dl' => '1',
+
             'peg_relate_images' => '1',
 
             'peg_img_align' => 'left',
@@ -83,12 +81,25 @@ if (!class_exists("Settings_Storage")) {
             'peg_single_video_size' => 'w400',
             'peg_single_video_size_format' => 'P',
 
-	        'peg_migrate_state' => 0
+	        'peg_migrate_state' => 0,
+
+	        //Photoswipe options
+	        'peg_photoswipe_show_share_button' => '1',
+	        'peg_photoswipe_show_fullscreen_button' => '1',
+	        'peg_photoswipe_show_caption' => '1',
+	        'peg_photoswipe_show_close_button' => '1',
+	        'peg_photoswipe_show_index_position' => '1'
+
+        );
+	    private $special_migrate_mappings = array(
+	        'peg_photoswipe_caption_num' => 'peg_photoswipe_show_index_position',
+		    'peg_photoswipe_caption_dl' => 'peg_photoswipe_show_share_button'
         );
 
 	    public function get_option($name){
 		    return $this->get_options()[$name];
 	    }
+
 	    public function set_option($name, $value){
 		    $this->get_options()[$name] = $value;
 		    update_option($name,$value);
@@ -97,7 +108,7 @@ if (!class_exists("Settings_Storage")) {
 	    private function migrate_if_possible(){
 		    //First check if the user has already saved some uptions
 		    $migration_state = get_option('peg_migrate_state');
-		    if(!isset($migration_state) || !$migration_state){
+		    if(!isset($migration_state) || !$migration_state || $migration_state != PEG_VERSION){
 			    //No options have been saved and no migration attempt has been tried before
 			    //check for pe2 options!
 			    foreach($this->options as $key => $value){
@@ -107,7 +118,11 @@ if (!class_exists("Settings_Storage")) {
 					    $this->options[$key] = $legacy_option_value;
 				    }
 			    }
-			    $this->options['peg_migrate_state'] = true;
+			    foreach($this->special_migrate_mappings as $oldKey => $newKey){
+				    $this->options[$newKey] = $this->options[$oldKey];
+				    unset($this->options[$oldKey]);
+			    }
+			    $this->options['peg_migrate_state'] = PEG_VERSION;
 			    //Store options
 			    $this->store();
 		    }
@@ -129,9 +144,9 @@ if (!class_exists("Settings_Storage")) {
 		        // options array
 		        foreach ($this->options as $key => $option) {
 			        $this->options[$key] = get_option($key,$option);
-			        if (!preg_match('/^[whs]\d+$/',$this->options['peg_large_limit'])){
-				        $this->options['peg_large_limit'] = '';
-			        }
+		        }
+		        if (!preg_match('/^[whs]\d+(-c)?$/',$this->options['peg_large_limit'])){
+			        $this->options['peg_large_limit'] = '';
 		        }
 		        $this->initialized = true;
 	        }

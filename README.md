@@ -6,14 +6,11 @@ The fork has been necessary because the authentication for private photo albums 
 
 **This fork supports OAUTH authentication with Google, so you can access private photos and albums again! Currently this only works on a blog-wide mode (Google+ Express access level: blog). I am working on a solution for a per user authentication.**
 
-Known issues / Untested:
-* Multisite installations have not been tested
-* Setting the "Google+ Express access level" to "user" won't have any effect right now
-
 Upgrade notice:
 *   The plugin requires at **least PHP 5.4**. Using a version before PHP 5.4 leads to parse errors.
+*   If you have shortcodes for single images that have been generated using a prior version of "Photo Express for Google" (0.1) or "Picasa and Google Plus Express" (all versions), you'll have to update them to make photoswipe work correctly. Please have a look into the FAQ.
 *   The prefix for all CSS classes has changed from "pe2" to "peg". Please consider this when upgrading from "Picasa and Google Plus Express".
-*   The function to store authentication data on a user basis has been removed to reduce complexity. If you rely on this function, please post a feature request.
+*   The function to store authentication data on a user basis has been removed. The use case for storing it on a per user basis was not clear. If you rely on this function, please post a feature request with your particular use case.
 
 
 Features:

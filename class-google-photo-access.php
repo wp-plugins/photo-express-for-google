@@ -381,11 +381,6 @@ if (!class_exists( "Google_Photo_Access" )) {
 		        $options['headers'] = array( 'Authorization' => "Bearer $this->access_token" );
 	        }
 
-	        //Change protocol to always be https! This is needed for OAuth
-	        /*if ( substr( $url, 0, 5 ) != 'https' ) {
-	            $url = 'https' . substr( $url, 4 );
-            }*/
-
             $response = wp_remote_get($url, $options);
 
             if (is_wp_error($response))

@@ -243,6 +243,10 @@ if (!class_exists("Photo_Renderer")) {
                     // we also have tags to query, append them
                     $feed_url .= '&tag=' . str_replace('-', '+', urlencode($atts['tags'])) . '&orderby=date&showall';
                 }
+	            //Check if the feed is based on a "base" url
+	            if(strpos($feed_url, 'picasaweb.google.com/data/feed/base') !== 0){
+		            $feed_url = str_replace('picasaweb.google.com/data/feed/base', 'picasaweb.google.com/data/feed/api',$feed_url);
+	            }
 
                 // grab the data and process it
                 $rss = $this->picasaAccess->get_feed($feed_url);
@@ -674,6 +678,11 @@ if (!class_exists("Photo_Renderer")) {
                             $url = Common::get_item_attr($item, 'media:thumbnail', 'url');
                             $title = $this->configuration->parse_caption(Common::escape(Common::get_item($item, 'title')));
                             $picasa_link = Common::get_item($item, 'link');
+
+                            //Calculate correct max width and height according to limits
+	                        $image_width = Common::get_item($item, 'gphoto:width');
+	                        $image_height = Common::get_item($item, 'gphoto:height');
+	                        $fitted_size = $this->determine_image_size(array($image_width,$image_height), $new_large_size);
                             //First check if there is already
 	                        $images[] = array(
                                 'ialbum' => Common::get_item($item, 'link'), // picasa album image
@@ -688,7 +697,9 @@ if (!class_exists("Photo_Renderer")) {
                                 //'itype'	   => (strpos($item, 'medium=\'video\'') !== false ? 'video' : 'image')
                                 'itype' => '',
                                 'prefix' => $tile_wrap_prefix,
-                                'suffix' => $tile_wrap_suffix
+                                'suffix' => $tile_wrap_suffix,
+		                        "width" => $fitted_size[0],
+		                        "height" => $fitted_size[1]
                             );
                             if ($limit && !$hide_rest) {
                                 if (++$count >= $limit) {
@@ -750,7 +761,7 @@ if (!class_exists("Photo_Renderer")) {
                                 $this->photos_displayed[] = $item['iorig'];
 
                                 // create the image link
-                                $img = "<a href=\"{$item['iorig']}\" link=\"{$item['ilink']}\" {$item['ititle']}{$amore_this}>$img</a>";
+                                $img = "<a href=\"{$item['iorig']}\" link=\"{$item['ilink']}\" data-size=\"{$item['width']}x{$item['height']}\" {$item['ititle']}{$amore_this}>$img</a>";
                             }
                             if ($peg_caption) {
                                 // add caption
@@ -906,6 +917,7 @@ if (!class_exists("Photo_Renderer")) {
              * @var $peg_img_style         string
              * @var $alt                   string the alternative text for the img tag
              * @var $src                   string
+             * @var $image_size             string the size of the image
              */
             // extract our attributes
             extract(shortcode_atts(array_merge(array(
@@ -915,7 +927,8 @@ if (!class_exists("Photo_Renderer")) {
                     'type' => '',
                     'alt' => '',
                     'limit' => '',
-                    'hide_rest' => ''
+                    'hide_rest' => '',
+	                'image_size' => ''
                 ), $this->configuration->get_options()
                 ), $atts)
             );
@@ -1007,6 +1020,9 @@ if (!class_exists("Photo_Renderer")) {
                 // create the a link, linking to the larger version of the image
                 $a_href = preg_replace('/\/(w|h|s)[0-9]+(-c-o|-c|-o|)\//', '/' . $large_size . '/', $src);
 
+	            // Reduce the size correctly
+	            $new_size = $this->determine_image_size( explode('x',$image_size),$large_size);
+	            $a_link_additions = $a_link_additions . ' data-size="'.$new_size[0].'x'.$new_size[1].'"';
                 // set the amore to our a_link_additions
                 $amore = $a_link_additions;
             } else {
@@ -1121,6 +1137,49 @@ if (!class_exists("Photo_Renderer")) {
             return do_shortcode($html);
         }// end function image_shortcode(..)
 
+	    function determine_image_size($originalSize, $limit){
+		    $image_width = $originalSize[0];
+		    $image_height = $originalSize[1];
+
+		    if($limit !== '' && $limit !== '/s0'){
+			    //Check the kind of limitation
+			    // h = height
+			    // w = width
+			    // s = square
+			    $size_config = array();
+			    preg_match('/\/([whs])([0-9]+)(-c)?/',$limit,$size_config);
+			    $kind =  $size_config[1];
+			    $size = $size_config[2];
+			    $crop = isset($size_config[3]);
+			    if($kind == 's'){
+				    $kind = ($image_width > $image_height) ?  'w' : 'h';
+			    }
+			    if(!$crop) {
+				    switch ( $kind ) {
+					    case 'h':
+						    $scale = $size / $image_height;
+						    if ( $scale < 1 ) {
+							    $image_height = $size;
+							    $image_width  = $image_width * $scale;
+						    }
+						    break;
+					    case 'w':
+						    $scale        = $size / $image_width;
+						    if($scale < 1){
+							    $image_width  = $size;
+							    $image_height = $scale * $image_height;
+						    }
+						    break;
+					    default:
+						    break;
+				    }
+			    }else{
+				    $image_height = $image_height > $size ? $size : $image_height;
+				    $image_width = $image_width > $size ? $size : $image_width;
+			    }
+		    }
+			return array($image_width, $image_height);
+	    }
         function add_footer_link()
         {
             echo "<p class=\"footer-link\" style=\"font-size:75%;text-align:center;\"><a
@@ -1208,20 +1267,33 @@ if (!class_exists("Photo_Renderer")) {
         function peg_add_photoswipe_script()
         {
             // add in the photoswipe script and related files
-            wp_enqueue_script('peg_photoswipe_klass', plugins_url('/photoswipe/lib/klass.min.js', __FILE__), array('jquery'), peg_PHOTOSWIPE_VERSION);
-            wp_enqueue_script('peg_photoswipe_jquery_js', plugins_url('/photoswipe/code.photoswipe.jquery-3.0.5.min.js', __FILE__), array('jquery'), peg_PHOTOSWIPE_VERSION);
+            wp_enqueue_script('peg_photoswipe', plugins_url('/photoswipe/photoswipe.min.js', __FILE__), null, peg_PHOTOSWIPE_VERSION);
+            wp_enqueue_script('peg_photoswipe_ui', plugins_url('/photoswipe/photoswipe-ui-default.min.js', __FILE__), array('peg_photoswipe'), peg_PHOTOSWIPE_VERSION);
+	        wp_enqueue_script('peg_photoswipe_init', plugins_url('photoswipe-init.js', __FILE__),array('peg_photoswipe','peg_photoswipe_ui'),PEG_VERSION);
             wp_enqueue_style('peg_photoswipe_css', plugins_url('/photoswipe/photoswipe.css', __FILE__), null, peg_PHOTOSWIPE_VERSION);
+	        wp_enqueue_style('peg_photoswipe_skin', plugins_url('/photoswipe/default-skin/default-skin.css', __FILE__), null, peg_PHOTOSWIPE_VERSION);
 
             // add the action to wp_footer to init photoswipe
             add_action('wp_footer', array(&$this, 'peg_init_photoswipe'));
         }// end function peg_add_photoswipe_script()
-
-        function peg_init_photoswipe()
+        function trueOrFalse($value){
+	        return ($value === "1") ? 'true' : 'false';
+        }
+		function peg_init_photoswipe()
         {
+	        //Render photoswipe html content
+	        echo file_get_contents(plugin_dir_path(__FILE__).'/photoswipe.html');
             // output the jQuery call to setup photoswipe
             ?>
+
             <script>
                 jQuery(document).ready(function () {
+                    options = {
+	                    shareEl: <?php echo $this->trueOrFalse($this->configuration->get_option('peg_photoswipe_show_share_button'));?>,
+	                    fullscreenEl:<?php echo $this->trueOrFalse($this->configuration->get_option('peg_photoswipe_show_fullscreen_button'));?>,
+	                    closeEl:<?php echo $this->trueOrFalse($this->configuration->get_option('peg_photoswipe_show_close_button'));?>,
+	                    counterEl:<?php echo $this->trueOrFalse($this->configuration->get_option('peg_photoswipe_show_index_position'));?>
+                    };
                     // ready event, get a list of unique rel values for the photoswiped images
                     var rels = [];
                     var rel = '';
@@ -1243,120 +1315,14 @@ if (!class_exists("Photo_Renderer")) {
                         // for each
                         jQuery.each(rels, function (key, value) {
                             // get this rel and create the collection
-                            peg_setup_photoswipe(jQuery('a.photoswipe[rel=' + value + ']'));
+	                        initPhotoSwipeFromDOM(jQuery('a.photoswipe[rel=' + value + ']'),options)
                         });
                     } else {
                         // we didn't get any rels, so attempt without rel checking
-                        peg_setup_photoswipe(jQuery('a.photoswipe'));
+	                    initPhotoSwipeFromDOM(jQuery('a.photoswipe'),options);
                     }
                 });
-                function peg_setup_photoswipe(collection) {
-                    // check to make sure our collection has records
-                    if (collection.length == 0) {
-                        // nothing to do
-                        return;
-                    }
 
-                    // otherwise, setup photoswipe
-                    var collection_counter = 0;
-                    var myPhotoSwipe = collection.photoSwipe({
-                        // enable settings of photoswipe
-                        enableMouseWheel: true,
-                        enableKeyboard: true,
-                        captionAndToolbarAutoHideDelay: 0,
-                        imageScaleMethod: 'fitNoUpscale',
-                        // set the caption from the A tag's title attribute
-                        getImageCaption: function (item) {
-                            // increment our image counter
-                            collection_counter++;
-
-                            // create the caption
-                            var caption = document.createElement('span');
-                            caption.appendChild(document.createTextNode(jQuery(item).attr('title')));
-
-                            <?php		// determine if we have any second row items to display
-                                        if(($this->options['peg_photoswipe_caption_num'] == 1) || ($this->options['peg_photoswipe_caption_view'] == 1) || ($this->options['peg_photoswipe_caption_dl'] == 1)){
-                                            // we have the second row
-
-                            ?>			// append a br
-                            caption.appendChild(document.createElement('br'));
-
-                            // define our second row separator
-                            var second_row_separator = false;
-
-                            // create the second row container
-                            var second_row = document.createElement('span');
-                            second_row.setAttribute('style', 'color: #BBB;');
-
-                            <?php			// determine if we're display the image number
-                                            if($this->options['peg_photoswipe_caption_num'] == 1){
-                                                // we need to display the image number text
-                            ?>			// create the "Image X of X"
-                            var num = document.createElement('span');
-                            num.appendChild(document.createTextNode('Image ' + collection_counter + ' of ' + collection.length));
-                            num.setAttribute('style', 'margin-right: 10px; margin-left: 10px;');
-                            second_row.appendChild(num);
-                            second_row_separator = true;
-                            <?php
-                                            }// end if we're displaying the caption number
-
-                                            // determine if we're displaying the view link
-                                            if($this->options['peg_photoswipe_caption_view'] == 1){
-                                                // we need to display the "View on Google+" link
-                            ?>
-                            // check to see if we need to output the separator
-                            if (second_row_separator) {
-                                second_row.appendChild(document.createTextNode('-'));
-                            }
-
-                            // create the link to Google+
-                            var link = document.createElement('a');
-                            link.setAttribute('href', jQuery(item).attr('link'));
-                            link.setAttribute('target', '_blank');
-                            link.setAttribute('style', 'font-style: italic; font-weight: normal; color: #BBB; margin-right: 10px; margin-left: 10px;');
-                            link.setAttribute('onmouseover', 'this.style.color = \'#FF6666\';');
-                            link.setAttribute('onmouseout', 'this.style.color = \'#BBB\';');
-                            link.appendChild(document.createTextNode('View on Google+'));
-
-                            // append links to the second row
-                            second_row.appendChild(link);
-                            second_row_separator = true;
-                            <?php
-                                            }// end if we're displaying the caption number
-
-                                            // determine if we're displaying the download link
-                                            if($this->options['peg_photoswipe_caption_dl'] == 1){
-                                                // we need to display the "Download" link
-                            ?>
-                            // check to see if we need to output the separator
-                            if (second_row_separator) {
-                                second_row.appendChild(document.createTextNode('-'));
-                            }
-
-                            // create the link to download
-                            // https://lh4.googleusercontent.com/-3qAvtWntPCg/UPS4VhKFDbI/AAAAAAAAF80/Fu-YgcWCdGo/s0-d/DSC_1276.JPG
-                            var download = document.createElement('a');
-                            download.setAttribute('href', jQuery(item).attr('href').replace(/\/[^\/]+\/([^\/]+)$/, '/s0-d/$1'));
-                            download.setAttribute('style', 'font-style: italic; font-weight: normal; color: #BBB; margin-right: 10px; margin-left: 10px;');
-                            download.setAttribute('onmouseover', 'this.style.color = \'#FF6666\';');
-                            download.setAttribute('onmouseout', 'this.style.color = \'#BBB\';');
-                            download.appendChild(document.createTextNode('Download'));
-
-                            // append the download link ot the second row
-                            second_row.appendChild(download);
-                            <?php
-                                            }// end if we're displaying the caption number
-                            ?>
-                            // append the second row to the caption
-                            caption.appendChild(second_row);
-                            <?php		}// end if we're outputting any part of the second row
-
-                            ?>
-                            // return the generated caption
-                            return caption;
-                        }// end function to create the caption
-                    });
-                }// end function peg_setup_photoswipe(..)
                 function peg_in_array(array, value) {
                     for (var i = 0; i < array.length; i++) {
                         if (array[i] === value) {

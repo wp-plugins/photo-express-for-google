@@ -44,7 +44,7 @@ require_once PEG_PLUGIN_PATH.'class-photo-renderer.php';
 require_once PEG_PLUGIN_PATH.'class-photo-browser.php';
 
 define('PEG_VERSION', '0.2');
-define('PEG_PHOTOSWIPE_VERSION', '3.0.5');
+define('PEG_PHOTOSWIPE_VERSION', '4.0.8');
 
 if(!class_exists( 'Photo_Express' )){
 	class Photo_Express{

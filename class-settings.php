@@ -320,43 +320,54 @@ HELP_TEXT;
 						// ------------------- PROPORTIONAL IMAGES -------------------
 						function peg_compute_image_size(mode,value,type) {
 							var target_input = jQuery('input[name=peg_' + type + '_size]');
-							if(target_input.length == 0){
+							if (target_input.length == 0) {
 								// this is the large image size selection
 								target_input = jQuery('input[name=peg_' + type + '_limit]');
 							}
 							var val = target_input.val();
-
+							var fireChange = false;
 							// check for the case where it was just enabled after having
 							// been disabled and saved
-							if((val == '') || (val == 'w')){
+							if ((val == '') || (val == 'w')) {
 								// override with some default
 								val = 'w600';
+								fireChange = true;
 							}
 
 							// split into our parts
 							var parts = {
-								mode : val.substring(0, 1),
-								size : val.replace(/^[a-z]*([0-9]+).*$/,'$1'),
-								crop : val.replace(/^[^\-]+(.*)$/,'$1')};
+								mode: val.substring(0, 1),
+								size: val.replace(/^[a-z]*([0-9]+).*$/, '$1'),
+								crop: val.replace(/^[^\-]+(.*)$/, '$1')
+							};
 
-							// override the particular part that was just changed
-							parts[mode] = value;
 
-							// make sure our crop variable is correct
-							if((parts.crop != '') && (parts.crop != '-c')){
-								parts.crop = '';
+							// check if a change occured
+							if (parts[mode] != value) {
+								// override the particular part that was just changed
+								parts[mode] = value;
+								fireChange = true;
 							}
 
-							// store the value back in our target
-							target_input.val(parts.mode+parts.size+parts.crop);
 
-							// update the text that displays the setting being used
-							jQuery('#peg_' + type + '_size_message_option').text(parts.mode+parts.size+parts.crop);
+							// make sure our crop variable is correct
+							if ((parts.crop != '') && (parts.crop != '-c')) {
+								parts.crop = '';
+								fireChange = true;
+							}
 
-							// trigger the .change event since we're changing
-							// the value of the target with js, the event
-							// doesn't get triggered
-							target_input.trigger('change');
+							if (fireChange) {
+								// store the value back in our target
+								target_input.val(parts.mode + parts.size + parts.crop);
+
+								// update the text that displays the setting being used
+								jQuery('#peg_' + type + '_size_message_option').text(parts.mode + parts.size + parts.crop);
+								console.log("Changed "+mode+" to "+value);
+								// trigger the .change event since we're changing
+								// the value of the target with js, the event
+								// doesn't get triggered
+								target_input.trigger('change');
+							}
 						}// end function peg_compute_image_size(..)
 
 						// if mode changes, update image size
@@ -513,18 +524,19 @@ HELP_TEXT;
             // ---------------------------------------------------------------------
             // large image size
             $option =$this->configuration->get_option('peg_large_limit');
-            preg_match('/(\w)(\d+)/', $option, $mode);
+            preg_match('/(\w)(\d+)(-c)?/', $option, $mode);
             if (!$mode) $mode = array('', '', '');
             $this->make_settings_row(
                 __('Large image size', 'peg'),
-                '<label><input type="checkbox" name="peg_large_limit" value="' . $option . '" ' . checked(($option) ? 1 : 0, 1, false) . ' /> ' . __('Set / Limit: ', 'peg') . '</label> ' .
+                '<input type="hidden" name="peg_large_limit" value = "'.$option.'" />'.
+	            '<label><input type="checkbox" name="peg_large_limit_activated" value="' . $option . '" ' . checked(($option) ? 1 : 0, 1, false) . ' /> ' . __('Set / Limit: ', 'peg') . '</label> ' .
                 '<label> &nbsp; &nbsp;[ <input type="radio" name="peg_large_size_mode" class="peg_large_limit" value="w" ' . checked($mode[1], 'w', false) . ' ' . disabled(($option) ? 1 : 0, 0, false) . ' /> ' . __('width', 'peg') . '</label> &nbsp; ' .
                 '<label><input type="radio" name="peg_large_size_mode" class="peg_large_limit" value="h" ' . checked($mode[1], 'h', false) . ' ' . disabled(($option) ? 1 : 0, 0, false) . ' /> ' . __('height', 'peg') . '</label> &nbsp; ' .
                 '<label><input type="radio" name="peg_large_size_mode" class="peg_large_limit" value="s" ' . checked($mode[1], 's', false) . ' ' . disabled(($option) ? 1 : 0, 0, false) . ' /> ' . __('any', 'peg') . ' ]&nbsp; &nbsp; </label> ' .
                 __(' proportionally to ', 'peg') .
                 '<input type="text" name="peg_large_size_dimension" class="peg_large_limit" style="width:60px;" id="peg_large_size" value="' . $mode[2] . '" ' . disabled(($option) ? 1 : 0, 0, false) . ' />' .
                 __(' pixels.', 'peg') .
-                '<label> &nbsp; &nbsp; &nbsp; <input type="checkbox" name="peg_large_size_crop" class="peg_large_limit" value="-c" ' . checked($crop, true, false) . ' /> ' . __(' Crop image into a square.', 'peg') . '</label> '
+                '<label> &nbsp; &nbsp; &nbsp; <input type="checkbox" name="peg_large_size_crop" class="peg_large_limit" value="-c" ' . checked(isset($mode[3]), true, false) . ' /> ' . __(' Crop image into a square.', 'peg') . '</label> '
                 ,
                 sprintf(__('Value \'%s\' will be used to set / limit large image'), "<span id=\"peg_large_size_message_option\">$option</span>"),
                 '',
@@ -532,7 +544,7 @@ HELP_TEXT;
             );
             ?>
 					<script type="text/javascript">
-						jQuery('input[name=peg_large_limit]').change(function(){
+						jQuery('input[name=peg_large_limit_activated]').change(function(){
 							if (jQuery(this).attr('checked')) {
 								// the checkbox is set
 								jQuery('input.peg_large_limit').removeAttr('disabled');
@@ -554,7 +566,11 @@ HELP_TEXT;
 							}
 						});
 						// if mode changes, update image size
-						jQuery('input[name=peg_large_size_mode]').change(function(){ if (jQuery(this).attr('checked')) peg_compute_image_size('mode',jQuery(this).val(), 'large'); });
+						jQuery('input[name=peg_large_size_mode]').change(function(){
+							if (jQuery(this).attr('checked')) {
+								peg_compute_image_size('mode',jQuery(this).val(), 'large');
+							}
+						});
 						// if size changes, update image size
 						jQuery('input[name=peg_large_size_dimension]').change(function(){
 							peg_compute_image_size('size',jQuery('input[name=peg_large_size_dimension]').val(), 'large');
@@ -662,9 +678,10 @@ jQuery('document').ready(function(){
 
                 $this->make_settings_row(
                     __('PhotoSwipe caption options', 'peg'),
-                    '<label><input type="checkbox" name="peg_photoswipe_caption_num" value="1" ' . checked($this->configuration->get_option('peg_photoswipe_caption_num'), '1', false) . ' /> ' . __('Add the "Image X of X" text to the second row of the caption', 'peg') . '</label> ' .
-                    '<br/><label><input type="checkbox" name="peg_photoswipe_caption_view" value="1" ' . checked($this->configuration->get_option('peg_photoswipe_caption_view'), '1', false) . ' /> ' . __('Add the "View on Google+" link to the second row of the caption', 'peg') . '</label> ' .
-                    '<br/><label><input type="checkbox" name="peg_photoswipe_caption_dl" value="1" ' . checked($this->configuration->get_option('peg_photoswipe_caption_dl'), '1', false) . ' /> ' . __('Add the "Download" link to the second row of the caption', 'peg') . '</label> ',
+                    '<label><input type="checkbox" name="peg_photoswipe_show_index_position" value="1" ' . checked($this->configuration->get_option('peg_photoswipe_show_index_position'), '1', false) . ' /> ' . __('Add the "X / X" text to the top left corner indicating the index of the currently shown image.', 'peg') . '</label> ' .
+                    '<br/><label><input type="checkbox" name="peg_photoswipe_show_share_button" value="1" ' . checked($this->configuration->get_option('peg_photoswipe_show_share_button'), '1', false) . ' /> ' . __('Add a "Share" button that includes a download option.', 'peg') . '</label> ' .
+                    '<br/><label><input type="checkbox" name="peg_photoswipe_show_close_button" value="1" ' . checked($this->configuration->get_option('peg_photoswipe_show_close_button'), '1', false) . ' /> ' . __('Add a "Close" button.', 'peg') . '</label> ' .
+                    '<br/><label><input type="checkbox" name="peg_photoswipe_show_fullscreen_button" value="1" ' . checked($this->configuration->get_option('peg_photoswipe_show_fullscreen_button'), '1', false) . ' /> ' . __('Add a button that toggles browser fullscreen mode.', 'peg') . '</label> ',
                     null,
                     ' id="peg_photoswipe_options"'
                 );
