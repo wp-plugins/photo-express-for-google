@@ -670,42 +670,12 @@ if (!class_exists("Photo_Renderer")) {
                                 }
                             }// end if we're using phototile and need to calculate this image's size
 
-                            // -------------------------------------------------------------
-                            // other information for this item
-                            switch ((string)$peg_img_sort) {
-                                case 'None':
-                                case 'none':
-                                case '0':
-                                    $key++;
-                                    break;
-                                case 'date':
-                                case '1':
-                                    $key = strtotime(Common::get_item($item, 'pubDate', true));
-                                    break;
-                                case 'Title':
-                                case 'title':
-                                case '2':
-                                    $key = Common::get_item($item, 'title', true);
-                                    break;
-                                case 'File name':
-                                case 'File':
-                                case 'file':
-                                case '3':
-                                    $key = Common::get_item($item, 'media:title', true);
-                                    break;
-                                case 'Random':
-                                case 'random':
-                                case '4':
-                                    $key = rand();
-                                    break;
-                                default:
-                                    $key++;
-                                    break;
-                            }
+
                             $url = Common::get_item_attr($item, 'media:thumbnail', 'url');
                             $title = $this->configuration->parse_caption(Common::escape(Common::get_item($item, 'title')));
                             $picasa_link = Common::get_item($item, 'link');
-                            $images[$key] = array(
+                            //First check if there is already
+	                        $images[] = array(
                                 'ialbum' => Common::get_item($item, 'link'), // picasa album image
                                 'icaption' => $title,
                                 'ialt' => Common::escape(Common::get_item($item, 'media:title')),
@@ -713,6 +683,7 @@ if (!class_exists("Photo_Renderer")) {
                                 'iorig' => str_replace('/s72', $new_large_size, $url),
                                 'ititle' => ($peg_title) ? 'title="' . $title . '" ' : '',
                                 'ilink' => $picasa_link,
+		                        'idate' => Common::get_item($item, 'pubDate'),
 //FIXME - CSS needs to be corrected
                                 //'itype'	   => (strpos($item, 'medium=\'video\'') !== false ? 'video' : 'image')
                                 'itype' => '',
@@ -725,11 +696,27 @@ if (!class_exists("Photo_Renderer")) {
                                 }
                             }
                         }// end foreach items to process
-                        if ($peg_img_asc) {
-                            ksort($images);
-                        } else {
-                            krsort($images);
+                        if($peg_img_sort == Settings::SORT_RANDOM){
+	                        shuffle($images);
+                        }else if($peg_img_sort != Settings::SORT_NONE) {
+	                        //Sort the images
+	                        usort( $images, function ( $a, $b ) use ($peg_img_asc, $peg_img_sort) {
+
+		                        $result = 0;
+		                        if($peg_img_sort == Settings::SORT_DATE){
+			                        $result = $a['idate'] < $b['idate'] ? -1 : ($a['idate'] == $b['idate'] ? 0 : 1);
+		                        }else if($peg_img_sort == Settings::SORT_TITLE){
+			                        $result = $a['ititle'] < $b['ititle'] ? -1 : ($a['ititle'] == $b['ititle'] ? 0 : 1);
+		                        }else if($peg_img_sort == Settings::SORT_FILE){
+			                        $result = $a['ialt'] < $b['ialt'] ? -1 : ($a['ialt'] == $b['ialt'] ? 0 : 1);
+		                        }
+		                        if(!$peg_img_asc){
+			                        $result = $result * -1;
+		                        }
+		                        return $result;
+	                        } );
                         }
+
 
                         if ($limit && $hide_rest && $limit == absint($limit)) {
                             $count = 0;
@@ -815,6 +802,7 @@ if (!class_exists("Photo_Renderer")) {
 
             return $code;
         }// end function gallery_shortcode(..)
+
 
         /**
          * Callback function to assist with sorting the items array returned by

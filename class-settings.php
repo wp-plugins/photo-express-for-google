@@ -9,6 +9,14 @@ if (!class_exists( "Settings" )) {
     class Settings
     {
 	    /**
+	     * Possible values used for sorting the images within an album
+	     */
+	    const SORT_NONE = '0';
+	    const SORT_DATE = '1';
+	    const SORT_FILE = '2';
+	    const SORT_TITLE = '3';
+	    const SORT_RANDOM = '4';
+	    /**
 	     * @var $picasaAccess Google_Photo_Access
 	     */
         private $picasaAccess;
