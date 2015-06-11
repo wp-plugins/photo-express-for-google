@@ -228,24 +228,15 @@ if (!class_exists("Photo_Browser")) {
             switch ($saved_state = sanitize_text_field($_POST['state'])) {
                 case 'nouser' :
                 case 'albums' :
-                    if ($this->options['peg_level'] == 'user')
-                        update_user_meta($current_user->data->ID, 'peg_saved_user_name', sanitize_text_field($_POST['last_request']));
-                    else
-                        update_option('peg_saved_user_name', sanitize_text_field($_POST['last_request']));
+                    update_option('peg_saved_user_name', sanitize_text_field($_POST['last_request']));
                     break;
                 case 'images' :
-                    if ($this->options['peg_level'] == 'user')
-                        update_user_meta($current_user->data->ID, 'peg_last_album', sanitize_text_field($_POST['last_request']));
-                    else
-                        update_option('peg_last_album', sanitize_text_field($_POST['last_request']));
+                    update_option('peg_last_album', sanitize_text_field($_POST['last_request']));
                     break;
                 default:
                     die();
             }
-            if ($this->options['peg_level'] == 'user')
-                update_user_meta($current_user->data->ID, 'peg_saved_state', $saved_state);
-            else
-                update_option('peg_saved_state', $saved_state);
+            update_option('peg_saved_state', $saved_state);
             die();
         }
 
@@ -333,14 +324,6 @@ if (!class_exists("Photo_Browser")) {
             foreach ($this->configuration->get_options() as $key => $val) {
                 if (!is_array($val)) // skip arrays: peg_roles
                     $options[$key] = $val;
-            }
-            if ($this->configuration->get_option('peg_level') == 'user') {
-                global $current_user;
-                $options['peg_save_state'] = get_user_meta($current_user->data->ID, 'peg_save_state', true);
-                $options['peg_saved_state'] = get_user_meta($current_user->data->ID, 'peg_saved_state', true);
-                $options['peg_last_album'] = get_user_meta($current_user->data->ID, 'peg_last_album', true);
-                $options['peg_saved_user_name'] = get_user_meta($current_user->data->ID, 'peg_saved_user_name', true);
-                $options['peg_user_name'] = get_user_meta($current_user->data->ID, 'peg_user_name', true);
             }
 
             if ($options['peg_save_state']) {

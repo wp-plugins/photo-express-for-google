@@ -31,7 +31,6 @@ if (!class_exists("Settings_Storage")) {
         private $options = array(
             'peg_icon' => 1,
             'peg_roles' => array('administrator' => 1),
-            'peg_level' => 'blog',
             'peg_user_name' => 'undefined',
 
             'peg_caption' => 0,
@@ -114,6 +113,7 @@ if (!class_exists("Settings_Storage")) {
 		    }
 	    }
 	    private function store(){
+
 		    foreach($this->options as $key => $value){
 			    update_option($key,$value);
 		    }

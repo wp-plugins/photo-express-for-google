@@ -136,12 +136,6 @@ if(!class_exists( 'Photo_Express' )){
 				add_action('admin_menu', array(&$this->admin, 'add_settings_page'));
 				add_filter('contextual_help', array(&$this->admin, 'contextual_help'), 10 , 2);
 
-
-				// Add setting for user profile if capable
-				add_action('show_user_profile', array(&$this->admin, 'user_profile'));
-				add_action('personal_options_update', array(&$this->admin, 'user_update'));
-
-
 				//Init styles
 				wp_enqueue_style('peg-style', plugins_url('/photo-express.css',__FILE__)  , array(), PEG_VERSION, 'all');
 				// new site creation

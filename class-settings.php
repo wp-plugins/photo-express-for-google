@@ -108,116 +108,7 @@ HELP_TEXT;
             return $help;
         }
 
-        /**
-         * Print and request user for Google in profile. Token link present
-         * uses if settings in user level
-         * run by action 'show_user_profile' from user-edit.php
-         *
-         * @param object $user
-         */
-        function user_profile($user)
-        {
-	        //TODO Migrate to OAuth
 
-            if (!current_user_can('picasa_dialog')) return;
-            if ($this->configuration->get_option('peg_level') != 'user') return;
-
-            $user_id = $user->ID;
-
-            if (isset($_GET['revoke'])) {
-                $response = $this->picasaAccess->get_feed("https://www.google.com/accounts/AuthSubRevokeToken");
-                if (is_wp_error($response)) {
-                    $message = __('Google returned error: ', 'peg') . $response->get_error_message();
-                } else {
-                    $message = __('Private access revoked', 'peg');
-                }
-                delete_user_meta($user_id, 'peg_token');
-               $this->configuration->set_option('peg_token','');
-            }
-
-            if (isset($_GET['message']) && $_GET['message']) {
-                $message = esc_html(stripcslashes($_GET['message']));
-            }
-
-
-            if (!get_user_meta($user_id, 'peg_user_name', true) && current_user_can('manage_options')) {
-                update_user_meta($user_id, 'peg_user_name',$this->configuration->get_option('peg_user_name'));
-                if ($this->configuration->get_option('peg_token'))
-                    update_user_meta($user_id, 'peg_token',$this->configuration->get_option('peg_token'));
-            }
-
-            ?>
-            <h3><?php _e('Google+ Express access', 'peg') ?></h3>
-
-            <?php
-            if ($message) {
-                echo '<div id="picasa-express-x2-message" class="updated"><p><strong>' . $message . '</strong></p></div>';
-            }
-            ?>
-
-            <table class="peg-form-table">
-                <?php
-                $user = get_user_meta($user_id, 'peg_user_name', true);
-                $result = 'ok';
-                $feed_url = "http://picasaweb.google.com/data/feed/base/user/$user?alt=rss&kind=album&hl=en_US";
-                $response = $this->picasaAccess->get_feed($feed_url);
-                if (is_wp_error($response))
-                    $result = 'error: ' . $response->get_error_message();
-                else if (!Common::get_item($response, 'atom:id')) {
-                    $result = 'error: wrong answer';
-                }
-
-                if (method_exists('WP_Http', '_getTransport')) {
-                    $ta = array();
-                    $transports = WP_Http::_getTransport(array());
-                    foreach ($transports as $t) $ta[] = strtolower(str_replace('WP_Http_', '', get_class($t)));
-                    if ($ta) $result = sprintf(__("Checking user: %s - Transport: %s - <a href=\"%s\" target=\"_blank\">URL</a>", 'peg'), $result, implode(',', $ta), $feed_url);
-                } else if (method_exists('WP_Http', '_get_first_available_transport')) {
-                    $transport = WP_Http::_get_first_available_transport(array());
-                    if ($transport) {
-                        $transport_name = strtolower(str_replace('WP_HTTP_', '', $transport));
-                        $result = sprintf(' ' . __("Checking user: %s - Transport: %s - <a href=\"%s\" target=\"_blank\">URL</a>", 'peg'), $result, $transport_name, $feed_url);
-                    }
-                } else {
-                    $result = '';
-                }
-                //TODO Integrate new OAuth 2.0 Authentification setup process here
-                $this->make_settings_row(
-                    __('Google user name', 'peg'),
-                    '<input type="text" class="regular-text" name="peg_user_name" value="' . esc_attr($user) . '" />' . $result .
-                    ((!get_user_meta($user_id, 'peg_token', true)) ? '<br /><a href="https://www.google.com/accounts/AuthSubRequest?next=?authorize&user=' . $user_id . '&scope=http%3A%2F%2Fpicasaweb.google.com%2Fdata%2F&session=1&secure=0">' . __('Requesting access to private albums', 'peg') . '</a>' : '<br/><a href="?revoke=true">' . __('Revoke access to private albums', 'peg') . '</a>'),
-                    ((get_user_meta($user_id, 'peg_token', true)) ? __('You already received the access to private albums', 'peg') : __('By this link you will be redirected to the Google authorization page. Please, use same name as above to login before accept.', 'peg'))
-                );
-                $option = get_user_meta($user_id, 'peg_save_state', true);
-                $this->make_settings_row(
-                    __('Save last state', 'peg'),
-                    '<label><input type="checkbox" name="peg_save_state" value="1" ' . checked($option, '1', false) . ' /> ' . __('Save last state in dialog', 'peg') . '</label> ',
-                    __('Save user when changes, album if you insert images or albums list if you shorcode for album', 'peg')
-                );
-                ?>
-            </table>
-        <?php
-        }
-
-
-        /**
-         * Save parameters and save profile
-         * by action 'personal_options_update' in user-edit.php
-         */
-        function user_update()
-        {
-
-            if (!current_user_can('picasa_dialog')) return;
-
-            $user_id = sanitize_text_field($_POST['user_id']);
-            if ($user_id && isset($_POST['peg_user_name']) && sanitize_text_field($_POST['peg_user_name']) != get_user_meta($user_id, 'peg_user_name', true)) {
-                $picasa_user = sanitize_text_field($_POST['peg_user_name']);
-                if (!$picasa_user) $picasa_user = 'undefined';
-                update_user_meta($user_id, 'peg_user_name', $picasa_user);
-                delete_user_meta($user_id, 'peg_token');
-            }
-            update_user_meta($user_id, 'peg_save_state', ((isset($_POST['peg_save_state']) && $_POST['peg_save_state']) ? '1' : '0'));
-        }
 
         /**
          * Print the shared options (between settings and dialog)
@@ -255,15 +146,6 @@ HELP_TEXT;
                         __('Roles for users who can use Google+ albums access via plugin', 'peg')
                     );
 
-                    $option =$this->configuration->get_option('peg_level');
-
-                    $this->make_settings_row(
-                        __('Google+ Express access level', 'peg'),
-                        '<label><input type="radio" name="peg_level" value="blog" ' . checked($option, 'blog', false) . ' onclick="jQuery(\'.picasa-site-user\').show();" /> ' . __('Blog') . '</label> &nbsp; ' .
-                        '<label><input type="radio" name="peg_level" value="user" ' . checked($option, 'user', false) . ' onclick="jQuery(\'.picasa-site-user\').hide();" /> ' . __('User') . '</label> ',
-                        __('Google user name ( including private album access ) defined for whole blog or for every user independently', 'peg')
-                    );
-
                     ?>
 
                 </table>
@@ -274,33 +156,6 @@ HELP_TEXT;
                     <?php
                     $user =$this->configuration->get_option('peg_user_name');
 
-                    if ('blog' ==$this->configuration->get_option('peg_level') && $user) {
-                        $result = 'ok';
-                        $feed_url = "http://picasaweb.google.com/data/feed/base/user/$user?alt=rss&kind=album&hl=en_US";
-                        $response = $this->picasaAccess->get_feed($feed_url);
-                        if (is_wp_error($response))
-                            $result = 'error: ' . $response->get_error_message();
-                        else if (!Common::get_item($response, 'atom:id')) {
-                            $result = 'error: wrong answer';
-                        }
-
-                        if (method_exists('WP_Http', '_getTransport')) {
-                            $ta = array();
-                            $transports = WP_Http::_getTransport(array());
-                            foreach ($transports as $t) $ta[] = strtolower(str_replace('WP_Http_', '', get_class($t)));
-                            if ($ta) $result = sprintf(__("Checking user: %s - Transport: %s - <a href=\"%s\" target=\"_blank\">URL</a>", 'peg'), $result, implode(',', $ta), $feed_url);
-                        } else if (method_exists('WP_Http', '_get_first_available_transport')) {
-                            $transport = \WP_Http::_get_first_available_transport(array());
-                            if ($transport) {
-                                $transport_name = strtolower(str_replace('WP_HTTP_', '', $transport));
-                                $result = sprintf(' ' . __("Checking user: %s - Transport: %s - <a href=\"%s\" target=\"_blank\">URL</a>", 'peg'), $result, $transport_name, $feed_url);
-                            }
-
-                        }
-                    } else $result = '';
-
-
-					//TODO make this possible for a multiuser installation
                     $this->make_settings_row(
                         __('Google user name for site', 'peg')
                         ,'<input type="text" class="regular-text" name="peg_user_name" value="' . esc_attr($user) . '" />'
@@ -308,14 +163,12 @@ HELP_TEXT;
                     );
 
 
-
-
                     $option =$this->configuration->get_option('peg_save_state');
                     $this->make_settings_row(
                         __('Save last state', 'peg'),
                         '<label><input type="checkbox" name="peg_save_state" value="1" ' . checked($option, '1', false) . ' /> ' . __('Save last state in dialog', 'peg') . '</label> ',
                         __('Save the last used username when it changes, the last selected album if you insert images, or the albums list if you insert an album shorcode', 'peg'),
-                        'class="picasa-site-user" style="display:' . (('blog' ==$this->configuration->get_option('peg_level')) ? 'table-row' : 'none') . '"'
+                        'class="picasa-site-user" style="display:table-row"'
                     );
 
                     $opts = array(
