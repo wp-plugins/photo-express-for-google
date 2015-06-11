@@ -13,6 +13,7 @@ Known issues / Untested:
 Upgrade notice:
 *   The plugin requires at **least PHP 5.4**. Using a version before PHP 5.4 leads to parse errors.
 *   The prefix for all CSS classes has changed from "pe2" to "peg". Please consider this when upgrading from "Picasa and Google Plus Express".
+*   The function to store authentication data on a user basis has been removed to reduce complexity. If you rely on this function, please post a feature request.
 
 
 Features:

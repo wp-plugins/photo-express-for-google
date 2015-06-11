@@ -194,11 +194,17 @@ small-thumbnail gallery.
 == Changelog ==
 
 = todo =
-* Make OAuth work also for "User" mode, in which each user can authenticate his own google account for private albums.
 * Upgrade Photoswipe
 * Embedded video support (currently doesn't appear to be allowed by Google)
 * Add the button to Visual toolbar of Tiny editor in full screen mode
 * Work with Google to correct tag searching index issues which cause tag searches to return unexpected results.
+
+= 0.2 =
+* Multisite installation has been tested
+* Fixed errors in the navigation flow of the settings page
+* Fixed an error that lead to albums only having one picture if being sorted by a criteria that has duplicate entries.
+* The function to store authentication data on a user basis has been removed to reduce complexity. If you rely on this function, please post a feature request.
+
 
 = 0.1 =
 * First version after the fork of Picasa Express 2 (Version 2.2.10)
@@ -385,6 +391,9 @@ Wordpress 3.2 fixes
 * First public release
 
 == Upgrade Notice ==
+
+= 0.2 =
+* The function to store authentication data on a user basis has been removed to reduce complexity. If you rely on this function, please post a feature request.
 
 = 0.1 =
 * Upgrade from Picasa Express x2 to Photo Express for Google if you want to use OAuth authentication.
