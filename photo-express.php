@@ -3,7 +3,7 @@
 Plugin Name: Photo Express for Google
 Plugin URI: http://wordpress.org/extend/plugins/photo-express
 Description: Browse and select photos from any public or private Google+ album and add them to your posts/pages.
-Version: 0.1
+Version: 0.2
 Author: thhake
 Author URI: http://www.thorsten-hake.com
 Text Domain: peg
@@ -43,14 +43,14 @@ require_once PEG_PLUGIN_PATH.'class-settings.php';
 require_once PEG_PLUGIN_PATH.'class-photo-renderer.php';
 require_once PEG_PLUGIN_PATH.'class-photo-browser.php';
 
-define('PEG_VERSION', '0.1');
+define('PEG_VERSION', '0.2');
 define('PEG_PHOTOSWIPE_VERSION', '3.0.5');
 
 if(!class_exists( 'Photo_Express' )){
 	class Photo_Express{
 		protected $tag = 'photoExpress';
 		protected $name = 'Photo Express for Google';
-		protected $version = '0.1';
+		protected $version = PEG_VERSION;
 
 		var $admin;
 		var $browser;
