@@ -73,7 +73,27 @@ if(!class_exists( 'Photo_Express' )){
             $this->hook_media_browser();
 
 		}
+
+		/**
+		 * Checking the required version so that the user does not get strange error messages.
+		 * @param string $wp
+		 * @param string $php
+		 */
+		function check_php_version($wp = '3.7', $php = '5.4'){
+			global $wp_version;
+			if ( version_compare( PHP_VERSION, $php, '<' ) )
+				$flag = 'PHP';
+			elseif
+			( version_compare( $wp_version, $wp, '<' ) )
+				$flag = 'WordPress';
+			else
+				return;
+			$version = 'PHP' == $flag ? $php : $wp;
+			deactivate_plugins( basename( __FILE__ ) );
+			wp_die('<p>The <strong>Photo Express for Google</strong> plugin requires '.$flag.'  version '.$version.' or greater.</p>','Plugin Activation Error',  array( 'response'=>200, 'back_link'=>TRUE ) );
+		}
 		function hook_activation(){
+			register_activation_hook(__FILE__, array(&$this, 'check_php_version'));
 			// Hook for plugin de/activation
 			if (is_multisite()){
 				register_activation_hook( __FILE__, array (&$this->configuration, 'init_site_options' ) );
