@@ -302,7 +302,7 @@ if (!class_exists( "Google_Photo_Access" )) {
 				add_settings_error('peg_oauth_settings','acquiring_access_token_failure','Could not aquire an OAuth 2 access token. Error message: '.$json_token->error.'. Error description: '.$json_token->error_description);
 			}else {
 				$this->store_access_token($json_token);
-				add_settings_error('peg_oauth_settings','acquiring_access_token_success','Successfully aquired an OAuth 2 access token. You can now access private photo albums.');
+				add_settings_error('peg_oauth_settings','acquiring_access_token_success','Successfully aquired an OAuth 2 access token. You can now access private photo albums.','updated');
 			}
 		}
 	    function store_access_token($json_token){
