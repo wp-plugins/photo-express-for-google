@@ -1,7 +1,10 @@
 <?php
 namespace photo_express;
+
+require_once plugin_dir_path(__FILE__).'class-feed-fetcher.php';
+
 if (!class_exists( "Google_Photo_Access" )) {
-    class Google_Photo_Access
+    class Google_Photo_Access implements Feed_Fetcher
     {
 	    private $client_id;
         private $client_secret;
@@ -10,9 +13,10 @@ if (!class_exists( "Google_Photo_Access" )) {
         private $expires_in;
 
 	    private $initialized = false;
-        function Google_Photo_Access()
-        {
-        }
+
+	    private $cache_keys;
+
+
 		function register_auth_settings(){
 			//Register a new section
 			add_settings_section(
@@ -247,7 +251,7 @@ if (!class_exists( "Google_Photo_Access" )) {
 			    $this->initialized = true;
 		    }
 	    }
-	    function deactivate(){
+	    function uninstall(){
 		    $this->revoke_authorization();
 		    delete_option('peg_oauth_settings');
 	    }
@@ -354,44 +358,35 @@ if (!class_exists( "Google_Photo_Access" )) {
 				}
 			}
 		}
-        /**
-         * Request server with token if defined
-         *
-         * @param string $url    URL for request data
-         * @param boolean $token use token from settings
-         * @return string received data
-         */
-        function get_feed($url) {
+	    public function get_feed($url){
+		    global $wp_version;
+		    // add Auth later
+		    $options = array(
+			    'timeout' => 30,
+			    'user-agent' => 'WordPress/' . $wp_version . '; ' . get_bloginfo( 'url' )
+		    );
 
-	        global $wp_version;
-	        // add Auth later
-	        $options = array(
-		        'timeout' => 30,
-		        'user-agent' => 'WordPress/' . $wp_version . '; ' . get_bloginfo( 'url' ),
-		        'sslverify' => false
-	        );
+		    $this->check_init();
+		    if($this->is_access_token_expired()){
+			    //Do a token refresh
+			    $this->refresh_access_token();
+		    }
 
-	        $this->check_init();
-			if($this->is_access_token_expired()){
-				//Do a token refresh
-				$this->refresh_access_token();
-			}
+		    if ( $this->access_token ) {
+			    $options['headers'] = array( 'Authorization' => "Bearer $this->access_token" );
+		    }
 
-	        if ( $this->access_token ) {
-		        $options['headers'] = array( 'Authorization' => "Bearer $this->access_token" );
-	        }
+		    $response = wp_remote_get($url, $options);
 
-            $response = wp_remote_get($url, $options);
+		    if (is_wp_error($response))
+			    return $response;
 
-            if (is_wp_error($response))
-                return $response;
+		    if (200 != $response['response']['code'])
+			    return new \WP_Error('http_request_failed', __('Response code is ') . $response['response']['code']);
 
-            if (200 != $response['response']['code'])
-                return new \WP_Error('http_request_failed', __('Response code is ') . $response['response']['code']);
-
-            // preg sensitive for \n\n, but we not need any formating inside
-            return (str_replace("\n", '', trim($response['body'])));
-        }
+		    // preg sensitive for \n\n, but we not need any formating inside
+		    return (str_replace("\n", '', trim($response['body'])));
+	    }
     }// end class Google_Photo_Access
 
 }// end if the class doesn't already exist

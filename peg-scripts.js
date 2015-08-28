@@ -64,6 +64,12 @@
         $('#peg-options input').change(function () {
             // options page input value changed
             var name = $(this).attr('name');
+            var extractOptionRegex = /\w+\[(\w+)\]/;
+            var result = extractOptionRegex.exec(name);
+            if(result == null){
+                return;
+            }
+            name = result[1];
             if (($(this).attr('type') == 'text') || ($(this).attr('type') == 'hidden')) {
                 // this is a text or hidden input, we can just get the value
                 peg_updated_options[name] = $(this).val();

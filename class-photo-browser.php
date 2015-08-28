@@ -12,7 +12,7 @@ if (!class_exists("Photo_Browser")) {
 	     */
 	    private $admin;
 	    /**
-	     * @var $picasaAcess Google_Photo_Access
+	     * @var $picasaAcess Feed_Fetcher
 	     */
         private $picasaAccess;
 
@@ -118,7 +118,13 @@ if (!class_exists("Photo_Browser")) {
             echo json_encode($out);
             die();
         }
-
+		function get_title($item){
+			$title = Common::escape(Common::get_item($item, 'media:description'));
+			if(empty($title)){
+				$title = Common::escape(Common::get_item($item, 'media:title'));
+			}
+			return $this->configuration->parse_caption($title);
+		}
         /**
          * wp_ajax_peg_get_images
          * print html for images
@@ -176,9 +182,12 @@ if (!class_exists("Photo_Browser")) {
                                 $key = Common::get_item($item, 'media:title', true);
                                 break;
                         }
+
+						$title = $this->get_title($item);
+
                         $images[$key] = array(
                             'album' => Common::get_item($item, 'link'), // picasa album image
-                            'title' => $this->configuration->parse_caption(Common::escape(Common::get_item($item, 'title'))),
+                            'title' => $title,
                             'file' => Common::escape(Common::get_item($item, 'media:title')),
                             'desc' => Common::escape(Common::get_item($item, 'media:description')),
                             'item_type' => (strpos($item, 'medium=\'video\'') !== false ? 'video' : 'image'),

@@ -1,9 +1,9 @@
 <?php
 namespace photo_express;
 
-require_once PEG_PLUGIN_PATH.'class-settings-storage.php';
-require_once PEG_PLUGIN_PATH.'class-common.php';
-require_once PEG_PLUGIN_PATH.'class-google-photo-access.php';
+require_once plugin_dir_path(__FILE__).'class-settings-storage.php';
+require_once plugin_dir_path(__FILE__).'class-common.php';
+require_once plugin_dir_path(__FILE__).'class-feed-fetcher.php';
 
 if (!class_exists("Photo_Renderer")) {
     class Photo_Renderer
@@ -14,7 +14,7 @@ if (!class_exists("Photo_Renderer")) {
 	     */
         private $configuration;
 	    /**
-	     * @var $picasaAccess Google_Photo_Access
+	     * @var $picasaAccess Feed_Fetcher
 	     */
         private $picasaAccess;
         /**
@@ -676,8 +676,9 @@ if (!class_exists("Photo_Renderer")) {
 
 
                             $url = Common::get_item_attr($item, 'media:thumbnail', 'url');
-                            $title = $this->configuration->parse_caption(Common::escape(Common::get_item($item, 'title')));
-                            $picasa_link = Common::get_item($item, 'link');
+                            $title = $this->get_title($item);
+
+	                        $picasa_link = Common::get_item($item, 'link');
 
                             //Calculate correct max width and height according to limits
 	                        $image_width = Common::get_item($item, 'gphoto:width');
@@ -743,19 +744,7 @@ if (!class_exists("Photo_Renderer")) {
                                     $item['iorig'] = $item['ialbum'];
                                 }
 
-                                // determine if this particular link has been displayed
-                                // already or not (to prevent multiple copies related
-                                // to each other from busting the navigation)
-                                if (in_array($item['iorig'], $this->photos_displayed)) {
-                                    // this photo has already been displayed, skip relating
-                                    // it to the rest and instead make up a new relationship
-                                    // for it so that we don't break the navigation
-                                    $amore_this = str_replace($uniqid, uniqid(), $amore);
-                                } else {
-                                    // this photo hasn't been displayed yet, it can be related
-                                    // without issue
-                                    $amore_this = $amore;
-                                }
+                                $amore_this = $amore;
 
                                 // store this photo in our list of displayed photos
                                 $this->photos_displayed[] = $item['iorig'];
@@ -814,7 +803,13 @@ if (!class_exists("Photo_Renderer")) {
             return $code;
         }// end function gallery_shortcode(..)
 
-
+	    function get_title($item){
+		    $title = Common::escape(Common::get_item($item, 'media:description'));
+		    if(empty($title)){
+			    $title = Common::escape(Common::get_item($item, 'media:title'));
+		    }
+		    return $this->configuration->parse_caption($title);
+	    }
         /**
          * Callback function to assist with sorting the items array returned by
          * a "tag" search to Google+, ordering by EXIF photo taken date
@@ -1095,6 +1090,12 @@ if (!class_exists("Photo_Renderer")) {
                 $istyle = '';
             }
 
+	        //Force SSL if needed
+	        if($this->configuration->get_option('peg_force_ssl')){
+		        $a_href = convert_to_https($a_href);
+		        $thumb_src = convert_to_https($thumb_src);
+	        }
+
             // create the HTML for the image tag
             $html = "<img src=\"{$thumb_src}\" alt=\"{$alt}\" {$ititle}{$iclass}{$istyle}{$imore} />";
 
@@ -1160,14 +1161,14 @@ if (!class_exists("Photo_Renderer")) {
 						    $scale = $size / $image_height;
 						    if ( $scale < 1 ) {
 							    $image_height = $size;
-							    $image_width  = $image_width * $scale;
+							    $image_width  = round($image_width * $scale);
 						    }
 						    break;
 					    case 'w':
 						    $scale        = $size / $image_width;
 						    if($scale < 1){
 							    $image_width  = $size;
-							    $image_height = $scale * $image_height;
+							    $image_height = round($scale * $image_height);
 						    }
 						    break;
 					    default:
@@ -1258,7 +1259,7 @@ if (!class_exists("Photo_Renderer")) {
                 };
                 /* ]]> */
             </script>
-            <script src="<?= plugins_url('/thickbox-custom.js', __FILE__) ?>?ver=<?= peg_VERSION ?>"></script>
+            <script src="<?= plugins_url('/thickbox-custom.js', __FILE__) ?>?ver=<?= PEG_VERSION ?>"></script>
         <?php
         }// end function peg_add_custom_thickbox_config()
 
@@ -1267,11 +1268,11 @@ if (!class_exists("Photo_Renderer")) {
         function peg_add_photoswipe_script()
         {
             // add in the photoswipe script and related files
-            wp_enqueue_script('peg_photoswipe', plugins_url('/photoswipe/photoswipe.min.js', __FILE__), null, peg_PHOTOSWIPE_VERSION);
-            wp_enqueue_script('peg_photoswipe_ui', plugins_url('/photoswipe/photoswipe-ui-default.min.js', __FILE__), array('peg_photoswipe'), peg_PHOTOSWIPE_VERSION);
+            wp_enqueue_script('peg_photoswipe', plugins_url('/photoswipe/photoswipe.min.js', __FILE__), null, PEG_PHOTOSWIPE_VERSION);
+            wp_enqueue_script('peg_photoswipe_ui', plugins_url('/photoswipe/photoswipe-ui-default.min.js', __FILE__), array('peg_photoswipe'), PEG_PHOTOSWIPE_VERSION);
 	        wp_enqueue_script('peg_photoswipe_init', plugins_url('photoswipe-init.js', __FILE__),array('peg_photoswipe','peg_photoswipe_ui'),PEG_VERSION);
-            wp_enqueue_style('peg_photoswipe_css', plugins_url('/photoswipe/photoswipe.css', __FILE__), null, peg_PHOTOSWIPE_VERSION);
-	        wp_enqueue_style('peg_photoswipe_skin', plugins_url('/photoswipe/default-skin/default-skin.css', __FILE__), null, peg_PHOTOSWIPE_VERSION);
+            wp_enqueue_style('peg_photoswipe_css', plugins_url('/photoswipe/photoswipe.css', __FILE__), null, PEG_PHOTOSWIPE_VERSION);
+	        wp_enqueue_style('peg_photoswipe_skin', plugins_url('/photoswipe/default-skin/default-skin.css', __FILE__), null, PEG_PHOTOSWIPE_VERSION);
 
             // add the action to wp_footer to init photoswipe
             add_action('wp_footer', array(&$this, 'peg_init_photoswipe'));
@@ -1317,10 +1318,15 @@ if (!class_exists("Photo_Renderer")) {
                             // get this rel and create the collection
 	                        initPhotoSwipeFromDOM(jQuery('a.photoswipe[rel=' + value + ']'),options)
                         });
+                        //Check if there are any images without any relation (i.e. single images)
+	                    jQuery('a.photoswipe:not([rel])').each(function(key, value){
+		                    initPhotoSwipeFromDOM(jQuery(this),options);
+	                    });
                     } else {
                         // we didn't get any rels, so attempt without rel checking
 	                    initPhotoSwipeFromDOM(jQuery('a.photoswipe'),options);
                     }
+
                 });
 
                 function peg_in_array(array, value) {

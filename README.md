@@ -42,6 +42,8 @@ Features:
 *	Define **Roles** who are allowed to use the plugin
 *	Switch from blog to **user level** for storing the user and private access token
 *	Settings for single-image thumbnail size, single-video thumbnail size and large image size limit
+* Forcing SSL connection to the Google photo APIs
+* Optional caching of the Google photo API results
 
 **And by design:**
 

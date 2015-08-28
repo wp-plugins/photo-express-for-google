@@ -1,8 +1,8 @@
 <?php
 namespace photo_express;
-require_once PEG_PLUGIN_PATH.'class-google-photo-access.php';
-require_once PEG_PLUGIN_PATH.'class-settings-storage.php';
-require_once PEG_PLUGIN_PATH.'class-common.php';
+require_once plugin_dir_path(__FILE__).'class-google-photo-access.php';
+require_once plugin_dir_path(__FILE__).'class-settings-storage.php';
+require_once plugin_dir_path(__FILE__).'class-common.php';
 
 // ########################################################################
 if (!class_exists( "Settings" )) {
@@ -69,12 +69,20 @@ if (!class_exists( "Settings" )) {
          */
         function settings_reg()
         {
-            foreach ($this->configuration->get_options() as $key => $option) {
-	            register_setting('photo-express', $key);
-            }
+	        register_setting('photo-express', 'peg_general_settings', array(&$this, 'validate_update'));
 	        $this->picasaAccess->register_auth_settings();
         }
 
+	    function validate_update($input){
+		    //First make a validation
+		    if(!(is_numeric($input['peg_cache_expiration_time']) && floor($input['peg_cache_expiration_time']) == $input['peg_cache_expiration_time'] && $input['peg_cache_expiration_time'] >= 0)){
+			    add_settings_error('peg_general_settings[peg_cache_expiration_time]','cache_expiration_invalid','Only positive whole numbers are allowed for the cache expiration');
+			    //reset
+			    $input['peg_cache_expiration_time'] = $this->configuration->get_option('peg_cache_expiration_time');
+		    }
+		    return $input;
+
+	    }
         /**
          * Define misseed style for setting page
          */
@@ -135,7 +143,7 @@ HELP_TEXT;
                     $peg_roles = array();
                     foreach ($editable_roles as $role => $details) {
                         $name = translate_user_role($details['name']);
-                        $peg_roles[] = "<label><input name=\"peg_roles[$role]\" type=\"checkbox\" value=\"1\" " . checked(isset($option[$role]), true, false) . "/> $name</label>";
+                        $peg_roles[] = "<label><input id=\"peg_roles[$role]\" name=\"peg_general_settings[peg_roles][$role]\" type=\"checkbox\" value=\"1\" " . checked(isset($option[$role]), true, false) . "/> $name</label>";
                     }
                     $out = implode('<br/>', $peg_roles);
                     unset($peg_roles);
@@ -158,7 +166,7 @@ HELP_TEXT;
 
                     $this->make_settings_row(
                         __('Google user name for site', 'peg')
-                        ,'<input type="text" class="regular-text" name="peg_user_name" value="' . esc_attr($user) . '" />'
+                        ,'<input type="text" class="regular-text" id="peg_user_name" name="peg_general_settings[peg_user_name]" value="' . esc_attr($user) . '" />'
                          ,__('The Google user which albums should be displayed')
                     );
 
@@ -166,7 +174,7 @@ HELP_TEXT;
                     $option =$this->configuration->get_option('peg_save_state');
                     $this->make_settings_row(
                         __('Save last state', 'peg'),
-                        '<label><input type="checkbox" name="peg_save_state" value="1" ' . checked($option, '1', false) . ' /> ' . __('Save last state in dialog', 'peg') . '</label> ',
+                        '<label><input type="checkbox" id="peg_save_state" name="peg_general_settings[peg_save_state]" value="1" ' . checked($option, '1', false) . ' /> ' . __('Save last state in dialog', 'peg') . '</label> ',
                         __('Save the last used username when it changes, the last selected album if you insert images, or the albums list if you insert an album shorcode', 'peg'),
                         'class="picasa-site-user" style="display:table-row"'
                     );
@@ -181,7 +189,7 @@ HELP_TEXT;
                     $out = '';
                     foreach ($opts as $i => $text) {
                         $out .= '<label>';
-                        $out .= "<input type=\"radio\" name=\"peg_icon\" value=\"$i\" " . checked($option, $i, false) . " />";
+                        $out .= "<input type=\"radio\" id=\"peg_icon_$i\" name=\"peg_general_settings[peg_icon]\" value=\"$i\" " . checked($option, $i, false) . " />";
                         $out .= "<img src=\"".plugins_url('icon_picasa'.$i.'.gif',__FILE__)."\" alt=\"$text\" title=\"$text\"/> &nbsp; ";
                         $out .= '</label>';
                     }
@@ -202,7 +210,7 @@ HELP_TEXT;
                     $out = '';
                     foreach ($opts as $i => $text) {
                         $out .= '<label>';
-                        $out .= "<input type=\"radio\" name=\"peg_img_sort\" value=\"$i\" " . checked($option, $i, false) . " /> $text &nbsp; ";
+                        $out .= "<input type=\"radio\" id=\"peg_img_sort_$i\" name=\"peg_general_settings[peg_img_sort]\" value=\"$i\" " . checked($option, $i, false) . " /> $text &nbsp; ";
                         $out .= '</label>';
                     }
                     $this->make_settings_row(
@@ -214,22 +222,22 @@ HELP_TEXT;
                     $option =$this->configuration->get_option('peg_img_asc');
                     $this->make_settings_row(
                         __('Sorting order', 'peg'),
-                        '<label><input type="radio" name="peg_img_asc" value="1" ' . checked($option, '1', false) . ' /> ' . __('Ascending', 'peg') . '</label> &nbsp; ' .
-                        '<label><input type="radio" name="peg_img_asc" value="0" ' . checked($option, '0', false) . ' /> ' . __('Descending', 'peg') . '</label> '
+                        '<label><input type="radio" id="peg_img_asc_asc" name="peg_general_settings[peg_img_asc]" value="1" ' . checked($option, '1', false) . ' /> ' . __('Ascending', 'peg') . '</label> &nbsp; ' .
+                        '<label><input type="radio" id="peg_img_asc_desc" name="peg_general_settings[peg_img_asc]" value="0" ' . checked($option, '0', false) . ' /> ' . __('Descending', 'peg') . '</label> '
                     );
 
                     $option =$this->configuration->get_option('peg_dialog_crop');
                     $this->make_settings_row(
                         __('Selection dialog thumbnail style', 'peg'),
-                        '<label><input type="radio" name="peg_dialog_crop" value="1" ' . checked($option, '1', false) . ' /> ' . __('Crop into a square', 'peg') . '</label> &nbsp; ' .
-                        '<label><input type="radio" name="peg_dialog_crop" value="0" ' . checked($option, '0', false) . ' /> ' . __('Scale proportionally', 'peg') . '</label> ',
+                        '<label><input type="radio" id="peg_dialog_crop_true" name="peg_general_settings[peg_dialog_crop]" value="1" ' . checked($option, '1', false) . ' /> ' . __('Crop into a square', 'peg') . '</label> &nbsp; ' .
+                        '<label><input type="radio" id="peg_dialog_crop_false" name="peg_general_settings[peg_dialog_crop]" value="0" ' . checked($option, '0', false) . ' /> ' . __('Scale proportionally', 'peg') . '</label> ',
                         __('This applies to image thumbnails only, not album cover thumbnails')
                     );
 
                     $option =$this->configuration->get_option('peg_max_albums_displayed');
                     $this->make_settings_row(
                         __('Maximum albums displayed', 'peg'),
-                        '<label>' . __('Max number of albums to display in the dialog:', 'peg') . '  <input type="text" name="peg_max_albums_displayed" value="' . $option . '" size=4 /></label>',
+                        '<label>' . __('Max number of albums to display in the dialog:', 'peg') . '  <input type="text" id="peg_max_albums_displayed" name="peg_general_settings[peg_max_albums_displayed]" value="' . $option . '" size=4 /></label>',
                         __('Leave blank to display all albums', 'peg')
                     );
 
@@ -256,24 +264,24 @@ HELP_TEXT;
             if (!$mode) $mode = array('', '', '');
             $this->make_settings_row(
                 __('Single image thumbnail size', 'peg'),
-                '<input type="radio" name="peg_single_image_size_format" value="P" ' . checked($format, 'P', false) . ' /> Proportionally &nbsp; ' .
-                '<input type="radio" name="peg_single_image_size_format" value="N" ' . checked($format, 'N', false) . ' /> Non-proportionally &nbsp; ' .
-                '<input type="radio" name="peg_single_image_size_format" value="C" ' . checked($format, 'C', false) . ' /> Custom<br/>' .
+                '<input type="radio" id="peg_single_image_size_format_proportionally" name="peg_general_settings[peg_single_image_size_format]" value="P" ' . checked($format, 'P', false) . ' /> Proportionally &nbsp; ' .
+                '<input type="radio" id="peg_single_image_size_format_non_proportionally" name="peg_general_settings[peg_single_image_size_format]" value="N" ' . checked($format, 'N', false) . ' /> Non-proportionally &nbsp; ' .
+                '<input type="radio" id="peg_single_image_size_format_custom" name="peg_general_settings[peg_single_image_size_format]" value="C" ' . checked($format, 'C', false) . ' /> Custom<br/>' .
                 '<div id="peg_single_image_proportional">' .
-                '	Scale: &nbsp; &nbsp;[ <label><input type="radio" name="peg_single_image_size_mode" class="peg_single_image_size" value="w" ' . checked($mode[1], 'w', false) . ' /> ' . __('width', 'peg') . '</label> &nbsp; ' .
-                '	<label><input type="radio" name="peg_single_image_size_mode" class="peg_single_image_size" value="h" ' . checked($mode[1], 'h', false) . ' /> ' . __('height', 'peg') . '</label> &nbsp; ' .
-                '	<label><input type="radio" name="peg_single_image_size_mode" class="peg_single_image_size" value="s" ' . checked($mode[1], 's', false) . ' /> ' . __('any', 'peg') . '</label> ' .
+                '	Scale: &nbsp; &nbsp;[ <label><input type="radio" id="peg_single_image_size_mode_width" name="peg_general_settings[peg_single_image_size_mode]" class="peg_single_image_size" value="w" ' . checked($mode[1], 'w', false) . ' /> ' . __('width', 'peg') . '</label> &nbsp; ' .
+                '	<label><input type="radio" id="peg_single_image_size_mode_height" name="peg_general_settings[peg_single_image_size_mode]" class="peg_single_image_size" value="h" ' . checked($mode[1], 'h', false) . ' /> ' . __('height', 'peg') . '</label> &nbsp; ' .
+                '	<label><input type="radio" id="peg_single_image_size_mode_any" name="peg_general_settings[peg_single_image_size_mode]" class="peg_single_image_size" value="s" ' . checked($mode[1], 's', false) . ' /> ' . __('any', 'peg') . '</label> ' .
                 __(' ]&nbsp; &nbsp; proportionally to ', 'peg') .
-                '	<input type="text" name="peg_single_image_size_dimension" class="peg_single_image_size" style="width:60px;" id="peg_single_image_size_dimension" value="' . $mode[2] . '" />' .
+                '	<input type="text" id="peg_single_image_size_dimension" name="peg_general_settings[peg_single_image_size_dimension]" class="peg_single_image_size" style="width:60px;"  value="' . $mode[2] . '" />' .
                 __(' pixels.', 'peg') .
-                '	<label> &nbsp; &nbsp; &nbsp; <input type="checkbox" name="peg_single_image_size_crop" class="peg_single_image_size" value="-c" ' . checked($crop, true, false) . ' /> ' . __(' Crop image into a square.', 'peg') . '</label> ' .
+                '	<label> &nbsp; &nbsp; &nbsp; <input type="checkbox" id="peg_single_image_size_crop" name="peg_general_settings[peg_single_image_size_crop]" class="peg_single_image_size" value="-c" ' . checked($crop, true, false) . ' /> ' . __(' Crop image into a square.', 'peg') . '</label> ' .
                 '</div>' .
                 '<div id="peg_single_image_non">' .
-                '	Width: <input type="text" name="peg_single_image_size_width" style="width: 60px;" id="peg_single_image_size_width" value="' . $mode[2] . '" /> &nbsp; &nbsp; ' .
-                '	Height: <input type="text" name="peg_single_image_size_height" style="width: 60px;" id="peg_single_image_size_height" value="' . $mode[4] . '" />' .
+                '	Width: <input type="text" id="peg_single_image_size_width" name="peg_general_settings[peg_single_image_size_width]" style="width: 60px;" value="' . $mode[2] . '" /> &nbsp; &nbsp; ' .
+                '	Height: <input type="text" id="peg_single_image_size_height" name="peg_general_settings[peg_single_image_size_height]" style="width: 60px;" value="' . $mode[4] . '" />' .
                 '</div>' .
                 '<div id="peg_single_image_custom">' .
-                '	Custom request string: <input type="text" name="peg_single_image_size" style="width: 120px;" id="peg_single_image_size_input" value="' . $option . '" />' .
+                '	Custom request string: <input type="text" id="peg_single_image_size" name="peg_general_settings[peg_single_image_size]" style="width: 120px;" value="' . $option . '" />' .
                 '</div>'
                 ,
                 '',
@@ -284,7 +292,7 @@ HELP_TEXT;
 					<script type="text/javascript">
 						// ------------------- TOGGLE SIZE MODE -------------------
 						function peg_toggle_image_size_mode(type){
-							var format = jQuery('input[name=peg_' + type + '_size_format]:checked').val();
+							var format = jQuery('input[name=peg_general_settings\\[peg_' + type + '_size_format\\]]:checked').val();
 							if(format == 'C'){
 								// custom, hide the others
 								jQuery('#peg_' + type + '_proportional, #peg_' + type + '_non').hide();
@@ -295,16 +303,16 @@ HELP_TEXT;
 								jQuery('#peg_' + type + '_non').show();
 
 								// execute our calculation based on data provided
-								peg_compute_nonpro_image_size(jQuery('input[name=peg_' + type + '_size_width], input[name=peg_' + type + '_size_height]'), type);
+								peg_compute_nonpro_image_size(jQuery('input[id=peg_' + type + '_size_width], input[id=peg_' + type + '_size_height]'), type);
 							}else{
 								// proportionally
 								jQuery('#peg_' + type + '_non, #peg_' + type + '_custom').hide();
 								jQuery('#peg_' + type + '_proportional').show();
 
 								// execute our calculation based on data provided
-								peg_compute_image_size('mode', jQuery('input[name=peg_' + type + '_size_mode]:checked').val(), type);
-								peg_compute_image_size('size', jQuery('input[name=peg_' + type + '_size_dimension]').val(), type);
-								peg_determine_crop(type, jQuery('input[name=peg_' + type + '_size_crop]'));
+								peg_compute_image_size('mode', jQuery('input[name=peg_general_settings\\[peg_' + type + '_size_mode\\]]:checked').val(), type);
+								peg_compute_image_size('size', jQuery('input[id=peg_' + type + '_size_dimension]').val(), type);
+								peg_determine_crop(type, jQuery('input[id=peg_' + type + '_size_crop]'));
 							}
 						}// end function peg_toggle_image_size_mode()
 
@@ -313,16 +321,16 @@ HELP_TEXT;
 						peg_toggle_image_size_mode('single_image');
 
 						// on image size format change, update the input fields
-						jQuery('input[name=peg_single_image_size_format]').click(function(){
+						jQuery('input[name=peg_general_settings\\[peg_single_image_size_format\\]]').click(function(){
 							peg_toggle_image_size_mode('single_image');
 						});
 
 						// ------------------- PROPORTIONAL IMAGES -------------------
 						function peg_compute_image_size(mode,value,type) {
-							var target_input = jQuery('input[name=peg_' + type + '_size]');
+							var target_input = jQuery('input[id=peg_' + type + '_size]');
 							if (target_input.length == 0) {
 								// this is the large image size selection
-								target_input = jQuery('input[name=peg_' + type + '_limit]');
+								target_input = jQuery('input[id=peg_' + type + '_limit]');
 							}
 							var val = target_input.val();
 							var fireChange = false;
@@ -371,18 +379,18 @@ HELP_TEXT;
 						}// end function peg_compute_image_size(..)
 
 						// if mode changes, update image size
-						jQuery('input[name=peg_single_image_size_mode]').change(function(){ if (jQuery(this).attr('checked')) peg_compute_image_size('mode',jQuery(this).val(), 'single_image'); });
+						jQuery('input[name=peg_general_settings\\[peg_single_image_size_mode\\]]').change(function(){ if (jQuery(this).attr('checked')) peg_compute_image_size('mode',jQuery(this).val(), 'single_image'); });
 
 						// if size changes, update image size
-						jQuery('input[name=peg_single_image_size_dimension]').change(function(){
-							peg_compute_image_size('size',jQuery('input[name=peg_single_image_size_dimension]').val(), 'single_image');
+						jQuery('#peg_single_image_size_dimension').change(function(){
+							peg_compute_image_size('size',jQuery('#peg_single_image_size_dimension').val(), 'single_image');
 						});
 
 						// function to determine size crop attribute
 						function peg_determine_crop(name, obj){
 							// use the checked selector to determine if the checkbox is
 							// checked or not
-							if(jQuery('input[name=peg_' + name + '_size_crop]:checked').length > 0){
+							if(jQuery('#peg_' + name + '_size_crop:checked').length > 0){
 								// the checkbox is checked
 								peg_compute_image_size('crop',jQuery(obj).val(), name);
 							}else{
@@ -392,13 +400,13 @@ HELP_TEXT;
 						}// end function peg_determine_crop(..)
 
 						// if crop changes, update image size
-						jQuery('input[name=peg_single_image_size_crop]').change(function(){
+						jQuery('#peg_single_image_size_crop').change(function(){
 							peg_determine_crop('single_image', this);
 						});
 
 						// ------------------- NON-PROPORTIONAL -------------------
 						function peg_compute_nonpro_image_size(obj, type){
-							var target_input = jQuery('input[name=peg_' + type + '_size]');
+							var target_input = jQuery('#peg_' + type + '_size');
 							var val = target_input.val();
 
 							// check for the case where it was just enabled after having
@@ -449,7 +457,7 @@ HELP_TEXT;
 						}// end function peg_compute_nonpro_image_size(..)
 
 						// if the width or height changes, update the value
-						jQuery('input[name=peg_single_image_size_width], input[name=peg_single_image_size_height]').change(function(){ peg_compute_nonpro_image_size(jQuery(this), 'single_image'); });
+						jQuery('#peg_single_image_size_width, #peg_single_image_size_height').change(function(){ peg_compute_nonpro_image_size(jQuery(this), 'single_image'); });
 					</script>
 					<?php
             // ---------------------------------------------------------------------
@@ -464,24 +472,24 @@ HELP_TEXT;
             if (!$mode) $mode = array('', '', '');
             $this->make_settings_row(
                 __('Single video thumbnail size', 'peg'),
-                '<input type="radio" name="peg_single_video_size_format" value="P" ' . checked($format, 'P', false) . ' /> Proportionally &nbsp; ' .
-                '<input type="radio" name="peg_single_video_size_format" value="N" ' . checked($format, 'N', false) . ' /> Non-proportionally &nbsp; ' .
-                '<input type="radio" name="peg_single_video_size_format" value="C" ' . checked($format, 'C', false) . ' /> Custom<br/>' .
+                '<input type="radio" id="peg_single_video_size_format_proportional" name="peg_general_settings[peg_single_video_size_format]" value="P" ' . checked($format, 'P', false) . ' /> Proportionally &nbsp; ' .
+                '<input type="radio" id="peg_single_video_size_format_non_proportional" name="peg_general_settings[peg_single_video_size_format]" value="N" ' . checked($format, 'N', false) . ' /> Non-proportionally &nbsp; ' .
+                '<input type="radio" id="peg_single_video_size_format_custom" name="peg_general_settings[peg_single_video_size_format]" value="C" ' . checked($format, 'C', false) . ' /> Custom<br/>' .
                 '<div id="peg_single_video_proportional">' .
-                '	Scale: &nbsp; &nbsp;[ <label><input type="radio" name="peg_single_video_size_mode" class="peg_single_video_size" value="w" ' . checked($mode[1], 'w', false) . ' /> ' . __('width', 'peg') . '</label> &nbsp; ' .
-                '	<label><input type="radio" name="peg_single_video_size_mode" class="peg_single_video_size" value="h" ' . checked($mode[1], 'h', false) . ' /> ' . __('height', 'peg') . '</label> &nbsp; ' .
-                '	<label><input type="radio" name="peg_single_video_size_mode" class="peg_single_video_size" value="s" ' . checked($mode[1], 's', false) . ' /> ' . __('any', 'peg') . '</label> ' .
+                '	Scale: &nbsp; &nbsp;[ <label><input type="radio" id="peg_single_video_size_mode_width" name="peg_general_settings[peg_single_video_size_mode]" class="peg_single_video_size" value="w" ' . checked($mode[1], 'w', false) . ' /> ' . __('width', 'peg') . '</label> &nbsp; ' .
+                '	<label><input type="radio" id="peg_single_video_size_mode_height" name="peg_general_settings[peg_single_video_size_mode]" class="peg_single_video_size" value="h" ' . checked($mode[1], 'h', false) . ' /> ' . __('height', 'peg') . '</label> &nbsp; ' .
+                '	<label><input type="radio" id="peg_single_video_size_mode_any" name="peg_general_settings[peg_single_video_size_mode]" class="peg_single_video_size" value="s" ' . checked($mode[1], 's', false) . ' /> ' . __('any', 'peg') . '</label> ' .
                 __(' ]&nbsp; &nbsp; proportionally to ', 'peg') .
-                '	<input type="text" name="peg_single_video_size_dimension" class="peg_single_video_size" style="width:60px;" id="peg_single_video_size_dimension" value="' . $mode[2] . '" />' .
+                '	<input type="text" id="peg_single_video_size_dimension" name="peg_general_settings[peg_single_video_size_dimension]" class="peg_single_video_size" style="width:60px;" value="' . $mode[2] . '" />' .
                 __(' pixels.', 'peg') .
-                '	<label> &nbsp; &nbsp; &nbsp; <input type="checkbox" name="peg_single_video_size_crop" class="peg_single_video_size" value="-c" ' . checked($crop, true, false) . ' /> ' . __(' Crop image into a square.', 'peg') . '</label> ' .
+                '	<label> &nbsp; &nbsp; &nbsp; <input type="checkbox" id="peg_single_video_size_crop" name="peg_general_settings[peg_single_video_size_crop]" class="peg_single_video_size" value="-c" ' . checked($crop, true, false) . ' /> ' . __(' Crop image into a square.', 'peg') . '</label> ' .
                 '</div>' .
                 '<div id="peg_single_video_non">' .
-                '	Width: <input type="text" name="peg_single_video_size_width" style="width: 60px;" id="peg_single_video_size_width" value="' . $mode[2] . '" /> &nbsp; &nbsp; ' .
-                '	Height: <input type="text" name="peg_single_video_size_height" style="width: 60px;" id="peg_single_video_size_height" value="' . $mode[4] . '" />' .
+                '	Width: <input type="text" id="peg_single_video_size_width" name="peg_general_settings[peg_single_video_size_width]" style="width: 60px;" value="' . $mode[2] . '" /> &nbsp; &nbsp; ' .
+                '	Height: <input type="text" id="peg_single_video_size_height" name="peg_general_settings[peg_single_video_size_height]" style="width: 60px;" value="' . $mode[4] . '" />' .
                 '</div>' .
                 '<div id="peg_single_video_custom">' .
-                '	Custom request string: <input type="text" name="peg_single_video_size" style="width: 120px;" id="peg_single_video_size_input" value="' . $option . '" />' .
+                '	Custom request string: <input type="text" id="peg_single_video_size" name="peg_general_settings[peg_single_video_size]" style="width: 120px;" value="' . $option . '" />' .
                 '</div>'
                 ,
                 '',
@@ -497,27 +505,27 @@ HELP_TEXT;
 						peg_toggle_image_size_mode('single_video');
 
 						// on image size format change, update the input fields
-						jQuery('input[name=peg_single_video_size_format]').click(function(){
+						jQuery('input[name=peg_general_settings\\[peg_single_video_size_format\\]]').click(function(){
 							peg_toggle_image_size_mode('single_video');
 						});
 
 						// ------------------- PROPORTIONAL IMAGES -------------------
 						// if mode changes, update image size
-						jQuery('input[name=peg_single_video_size_mode]').change(function(){ if (jQuery(this).attr('checked')) peg_compute_image_size('mode',jQuery(this).val(), 'single_video'); });
+						jQuery('input[name=peg_general_settings\\[peg_single_video_size_mode\\]]').change(function(){ if (jQuery(this).attr('checked')) peg_compute_image_size('mode',jQuery(this).val(), 'single_video'); });
 
 						// if size changes, update image size
-						jQuery('input[name=peg_single_video_size_dimension]').change(function(){
-							peg_compute_image_size('size',jQuery('input[name=peg_single_video_size_dimension]').val(), 'single_video');
+						jQuery('#peg_single_video_size_dimension').change(function(){
+							peg_compute_image_size('size',jQuery('#peg_single_video_size_dimension').val(), 'single_video');
 						});
 
 						// if crop changes, update image size
-						jQuery('input[name=peg_single_video_size_crop]').change(function(){
+						jQuery('#peg_single_video_size_crop').change(function(){
 							peg_determine_crop('single_video', this);
 						});
 
 						// ------------------- NON-PROPORTIONAL -------------------
 						// if the width or height changes, update the value
-						jQuery('input[name=peg_single_video_size_width], input[name=peg_single_video_size_height]').change(function(){ peg_compute_nonpro_image_size(jQuery(this), 'single_video'); });
+						jQuery('#peg_single_video_size_width, #peg_single_video_size_height').change(function(){ peg_compute_nonpro_image_size(jQuery(this), 'single_video'); });
 					</script>
 <?php
 
@@ -528,15 +536,15 @@ HELP_TEXT;
             if (!$mode) $mode = array('', '', '');
             $this->make_settings_row(
                 __('Large image size', 'peg'),
-                '<input type="hidden" name="peg_large_limit" value = "'.$option.'" />'.
-	            '<label><input type="checkbox" name="peg_large_limit_activated" value="' . $option . '" ' . checked(($option) ? 1 : 0, 1, false) . ' /> ' . __('Set / Limit: ', 'peg') . '</label> ' .
-                '<label> &nbsp; &nbsp;[ <input type="radio" name="peg_large_size_mode" class="peg_large_limit" value="w" ' . checked($mode[1], 'w', false) . ' ' . disabled(($option) ? 1 : 0, 0, false) . ' /> ' . __('width', 'peg') . '</label> &nbsp; ' .
-                '<label><input type="radio" name="peg_large_size_mode" class="peg_large_limit" value="h" ' . checked($mode[1], 'h', false) . ' ' . disabled(($option) ? 1 : 0, 0, false) . ' /> ' . __('height', 'peg') . '</label> &nbsp; ' .
-                '<label><input type="radio" name="peg_large_size_mode" class="peg_large_limit" value="s" ' . checked($mode[1], 's', false) . ' ' . disabled(($option) ? 1 : 0, 0, false) . ' /> ' . __('any', 'peg') . ' ]&nbsp; &nbsp; </label> ' .
+                '<input type="hidden" id="peg_large_limit" name="peg_general_settings[peg_large_limit]" value = "'.$option.'" />'.
+	            '<label><input type="checkbox" id="peg_large_limit_activated" name="peg_general_settings[peg_large_limit_activated]" value="' . $option . '" ' . checked(($option) ? 1 : 0, 1, false) . ' /> ' . __('Set / Limit: ', 'peg') . '</label> ' .
+                '<label> &nbsp; &nbsp;[ <input type="radio" id="peg_large_size_mode_width" name="peg_general_settings[peg_large_size_mode]" class="peg_large_limit" value="w" ' . checked($mode[1], 'w', false) . ' ' . disabled(($option) ? 1 : 0, 0, false) . ' /> ' . __('width', 'peg') . '</label> &nbsp; ' .
+                '<label><input type="radio" id="peg_large_size_mode_height" name="peg_general_settings[peg_large_size_mode]" class="peg_large_limit" value="h" ' . checked($mode[1], 'h', false) . ' ' . disabled(($option) ? 1 : 0, 0, false) . ' /> ' . __('height', 'peg') . '</label> &nbsp; ' .
+                '<label><input type="radio" id="peg_large_size_mode_any" name="peg_general_settings[peg_large_size_mode]" class="peg_large_limit" value="s" ' . checked($mode[1], 's', false) . ' ' . disabled(($option) ? 1 : 0, 0, false) . ' /> ' . __('any', 'peg') . ' ]&nbsp; &nbsp; </label> ' .
                 __(' proportionally to ', 'peg') .
-                '<input type="text" name="peg_large_size_dimension" class="peg_large_limit" style="width:60px;" id="peg_large_size" value="' . $mode[2] . '" ' . disabled(($option) ? 1 : 0, 0, false) . ' />' .
+                '<input type="text" id="peg_large_size_dimension" name="peg_general_settings[peg_large_size_dimension]" class="peg_large_limit" style="width:60px;" value="' . $mode[2] . '" ' . disabled(($option) ? 1 : 0, 0, false) . ' />' .
                 __(' pixels.', 'peg') .
-                '<label> &nbsp; &nbsp; &nbsp; <input type="checkbox" name="peg_large_size_crop" class="peg_large_limit" value="-c" ' . checked(isset($mode[3]), true, false) . ' /> ' . __(' Crop image into a square.', 'peg') . '</label> '
+                '<label> &nbsp; &nbsp; &nbsp; <input type="checkbox" id="peg_large_size_crop" name="peg_general_settings[peg_large_size_crop]" class="peg_large_limit" value="-c" ' . checked(isset($mode[3]), true, false) . ' /> ' . __(' Crop image into a square.', 'peg') . '</label> '
                 ,
                 sprintf(__('Value \'%s\' will be used to set / limit large image'), "<span id=\"peg_large_size_message_option\">$option</span>"),
                 '',
@@ -544,39 +552,39 @@ HELP_TEXT;
             );
             ?>
 					<script type="text/javascript">
-						jQuery('input[name=peg_large_limit_activated]').change(function(){
+						jQuery('#peg_large_limit_activated').change(function(){
 							if (jQuery(this).attr('checked')) {
 								// the checkbox is set
 								jQuery('input.peg_large_limit').removeAttr('disabled');
 								jQuery('#large-limit-message').show();
 
 								// set the default for the input boxes
-								jQuery('input[name=peg_large_size_mode][value=w]').attr('checked', 'true');
-								jQuery('input[name=peg_large_size_dimension]').val('600');
+								jQuery('#peg_large_size_mode_width').attr('checked', 'true');
+								jQuery('#peg_large_size_dimension').val('600');
 
 								// call the calculation function for each section
-								peg_compute_image_size('mode',jQuery('input[name=peg_large_size_mode]').val(), 'large');
-								peg_compute_image_size('size',jQuery('input[name=peg_large_size_dimension]').val(), 'large');
+								peg_compute_image_size('mode',jQuery('input[name=peg_general_settings\\[peg_large_size_mode\\]]').val(), 'large');
+								peg_compute_image_size('size',jQuery('input[name=peg_general_settings\\[peg_large_size_dimension\\]').val(), 'large');
 							} else {
 								jQuery('input.peg_large_limit').removeAttr('checked').attr('disabled','disabled');
-								jQuery('input[name=peg_large_size]').val('');
+								jQuery('#peg_large_size_dimension').val('');
 								jQuery('#peg_large_size_message_option').text('');
-								jQuery('input[name=peg_large_limit]').val('');
+								jQuery('#peg_large_limit').val('');
 								jQuery('#large-limit-message').hide();
 							}
 						});
 						// if mode changes, update image size
-						jQuery('input[name=peg_large_size_mode]').change(function(){
+						jQuery('input[name=peg_general_settings\\[peg_large_size_mode\\]]').change(function(){
 							if (jQuery(this).attr('checked')) {
 								peg_compute_image_size('mode',jQuery(this).val(), 'large');
 							}
 						});
 						// if size changes, update image size
-						jQuery('input[name=peg_large_size_dimension]').change(function(){
-							peg_compute_image_size('size',jQuery('input[name=peg_large_size_dimension]').val(), 'large');
+						jQuery('#peg_large_size_dimension').change(function(){
+							peg_compute_image_size('size',jQuery('#peg_large_size_dimension').val(), 'large');
 						});
 						// if crop changes, update image size
-						jQuery('input[name=peg_large_size_crop]').change(function(){
+						jQuery('#peg_large_size_crop').change(function(){
 							peg_determine_crop('large', this);
 						});
 					</script>
@@ -585,33 +593,33 @@ HELP_TEXT;
             $option =$this->configuration->get_option('peg_caption');
             $this->make_settings_row(
                 __('Display caption', 'peg'),
-                '<label><input type="checkbox" name="peg_caption" value="1" ' . checked($option, '1', false) . ' onclick="toggle_caption_children()" /> ' . __('Show the caption under thumbnail image', 'peg') . '</label> ',
+                '<label><input type="checkbox" id="peg_caption" name="peg_general_settings[peg_caption]" value="1" ' . checked($option, '1', false) . ' onclick="toggle_caption_children()" /> ' . __('Show the caption under thumbnail image', 'peg') . '</label> ',
                 null,
-                'id="peg_caption"'
+                'id="peg_caption_row"'
             );
 
             $this->make_settings_row(
                 __('Caption container CSS class', 'peg'),
-                '<input type="text" name="peg_caption_css" class="regular-text peg_caption_child" value="' . esc_attr($this->configuration->get_option('peg_caption_css')) . '"/>',
+                '<input type="text" id="peg_caption_css" name="peg_general_settings[peg_caption_css]" class="regular-text peg_caption_child" value="' . esc_attr($this->configuration->get_option('peg_caption_css')) . '"/>',
                 __("You can define one or more classes for the caption container tag", 'peg'),
                 ' class="peg_caption_child"'
             );
             $this->make_settings_row(
                 __('Caption container style', 'peg'),
-                '<input type="text" name="peg_caption_style" class="regular-text peg_caption_child" value="' . esc_attr($this->configuration->get_option('peg_caption_style')) . '"/>',
+                '<input type="text" id="peg_caption_style" name="peg_general_settings[peg_caption_style]" class="regular-text peg_caption_child" value="' . esc_attr($this->configuration->get_option('peg_caption_style')) . '"/>',
                 __('You can hardcode any css attributes for the caption container tag', 'peg'),
                 ' class="peg_caption_child"'
             );
 
             $this->make_settings_row(
                 __('Caption P CSS class', 'peg'),
-                '<input type="text" name="peg_caption_p_css" class="regular-text peg_caption_child" value="' . esc_attr($this->configuration->get_option('peg_caption_p_css')) . '"/>',
+                '<input type="text" id="peg_caption_p_css" name="peg_general_settings[peg_caption_p_css]" class="regular-text peg_caption_child" value="' . esc_attr($this->configuration->get_option('peg_caption_p_css')) . '"/>',
                 __("You can define one or more classes for the caption P tag", 'peg'),
                 ' class="peg_caption_child"'
             );
             $this->make_settings_row(
                 __('Caption P style', 'peg'),
-                '<input type="text" name="peg_caption_p_style" class="regular-text peg_caption_child" value="' . esc_attr($this->configuration->get_option('peg_caption_p_style')) . '"/>',
+                '<input type="text" id="peg_caption_p_style" name="peg_general_settings[peg_caption_p_style]" class="regular-text peg_caption_child" value="' . esc_attr($this->configuration->get_option('peg_caption_p_style')) . '"/>',
                 __('You can hardcode any css attributes for the caption P tag', 'peg'),
                 ' class="peg_caption_child"'
             );
@@ -621,7 +629,7 @@ HELP_TEXT;
             // caption checkbox set
             ?><script>
 function toggle_caption_children(){
-	var val = jQuery('input[name=peg_caption]:checked').val();
+	var val = jQuery('#peg_caption:checked').val();
 	if(val == '1'){
 		// the checkbox is checked, show the children
 		jQuery('tr.peg_caption_child').show();
@@ -641,13 +649,13 @@ jQuery('document').ready(function(){
             $option =$this->configuration->get_option('peg_title');
             $this->make_settings_row(
                 __('Add caption as title', 'peg'),
-                '<label><input type="checkbox" name="peg_title" value="1" ' . checked($option, '1', false) . ' /> ' . __('Show the caption by mouse hover tip', 'peg') . '</label> '
+                '<label><input type="checkbox" id="peg_title" name="peg_general_settings[peg_title]" value="1" ' . checked($option, '1', false) . ' /> ' . __('Show the caption by mouse hover tip', 'peg') . '</label> '
             );
 
             $option =$this->configuration->get_option('peg_parse_caption');
             $this->make_settings_row(
                 __('Remove filename captions', 'peg'),
-                '<label><input type="checkbox" name="peg_parse_caption" value="1" ' . checked($option, '1', false) . ' /> ' . __('If a caption is detected as the image filename, replace it with blank', 'peg') . '</label> '
+                '<label><input type="checkbox" id="peg_parse_caption" name="peg_general_settings[peg_parse_caption]" value="1" ' . checked($option, '1', false) . ' /> ' . __('If a caption is detected as the image filename, replace it with blank', 'peg') . '</label> '
             );
 
             // link option for photos
@@ -664,7 +672,7 @@ jQuery('document').ready(function(){
                     'photoswipe' => __('PhotoSwipe (Mobile friendly)', 'peg')
                 );
 
-                $out = '<select name="peg_link" id="peg_link" onchange="peg_toggle_large_image_link_options()">';
+                $out = '<select name="peg_general_settings[peg_link]" id="peg_link" onchange="peg_toggle_large_image_link_options()">';
                 $option =$this->configuration->get_option('peg_link');
                 foreach ($opts as $key => $val) {
                     $out .= "<option value=\"$key\" " . selected($option, $key, false) . ">$val</option>";
@@ -678,10 +686,10 @@ jQuery('document').ready(function(){
 
                 $this->make_settings_row(
                     __('PhotoSwipe caption options', 'peg'),
-                    '<label><input type="checkbox" name="peg_photoswipe_show_index_position" value="1" ' . checked($this->configuration->get_option('peg_photoswipe_show_index_position'), '1', false) . ' /> ' . __('Add the "X / X" text to the top left corner indicating the index of the currently shown image.', 'peg') . '</label> ' .
-                    '<br/><label><input type="checkbox" name="peg_photoswipe_show_share_button" value="1" ' . checked($this->configuration->get_option('peg_photoswipe_show_share_button'), '1', false) . ' /> ' . __('Add a "Share" button that includes a download option.', 'peg') . '</label> ' .
-                    '<br/><label><input type="checkbox" name="peg_photoswipe_show_close_button" value="1" ' . checked($this->configuration->get_option('peg_photoswipe_show_close_button'), '1', false) . ' /> ' . __('Add a "Close" button.', 'peg') . '</label> ' .
-                    '<br/><label><input type="checkbox" name="peg_photoswipe_show_fullscreen_button" value="1" ' . checked($this->configuration->get_option('peg_photoswipe_show_fullscreen_button'), '1', false) . ' /> ' . __('Add a button that toggles browser fullscreen mode.', 'peg') . '</label> ',
+                    '<label><input type="checkbox" id="peg_photoswipe_show_index_position" name="peg_general_settings[peg_photoswipe_show_index_position]" value="1" ' . checked($this->configuration->get_option('peg_photoswipe_show_index_position'), '1', false) . ' /> ' . __('Add the "X / X" text to the top left corner indicating the index of the currently shown image.', 'peg') . '</label> ' .
+                    '<br/><label><input type="checkbox" id="peg_photoswipe_show_share_button" name="peg_general_settings[peg_photoswipe_show_share_button]" value="1" ' . checked($this->configuration->get_option('peg_photoswipe_show_share_button'), '1', false) . ' /> ' . __('Add a "Share" button that includes a download option.', 'peg') . '</label> ' .
+                    '<br/><label><input type="checkbox" id="peg_photoswipe_show_close_button" name="peg_general_settings[peg_photoswipe_show_close_button]" value="1" ' . checked($this->configuration->get_option('peg_photoswipe_show_close_button'), '1', false) . ' /> ' . __('Add a "Close" button.', 'peg') . '</label> ' .
+                    '<br/><label><input type="checkbox" id="peg_photoswipe_show_fullscreen_button" name="peg_general_settings[peg_photoswipe_show_fullscreen_button]" value="1" ' . checked($this->configuration->get_option('peg_photoswipe_show_fullscreen_button'), '1', false) . ' /> ' . __('Add a button that toggles browser fullscreen mode.', 'peg') . '</label> ',
                     null,
                     ' id="peg_photoswipe_options"'
                 );
@@ -689,7 +697,7 @@ jQuery('document').ready(function(){
                 $option =$this->configuration->get_option('peg_relate_images');
                 $this->make_settings_row(
                     __('Relate all of a post\'s images', 'peg'),
-                    '<label><input type="checkbox" name="peg_relate_images" value="1" ' . checked($option, '1', false) . ' /> ' . __('If using PhotoSwipe, Thickbox, Lightbox or Highslide, relate all images in the page/post together for fluid next/prev navigation', 'peg') . '</label> ',
+                    '<label><input type="checkbox" id="peg_relate_images" name="peg_general_settings[peg_relate_images]" value="1" ' . checked($option, '1', false) . ' /> ' . __('If using PhotoSwipe, Thickbox, Lightbox or Highslide, relate all images in the page/post together for fluid next/prev navigation', 'peg') . '</label> ',
                     null,
                     'id="peg_relate_row"'
                 );
@@ -766,8 +774,8 @@ jQuery('document').ready(function(){
             $option =$this->configuration->get_option('peg_img_align');
             $out = '';
             foreach ($opts as $key => $val) {
-                $out .= "<input type=\"radio\" name=\"peg_img_align\" id=\"img-align$key\" value=\"$key\" " . checked($option, $key, false) . " /> ";
-                $out .= "<label for=\"img-align$key\" style=\"padding-left:22px;margin-right:13px;\" class=\"image-align-$key-label\">$val</label>";
+                $out .= "<input type=\"radio\" id=\"peg_img_align_$key\" name=\"peg_general_settings[peg_img_align]\" value=\"$key\" " . checked($option, $key, false) . " /> ";
+                $out .= "<label for=\"peg_img_align_$key\" style=\"padding-left:22px;margin-right:13px;\" class=\"image-align-$key-label\">$val</label>";
             }
             $this->make_settings_row(
                 __('Image alignment', 'peg'),
@@ -777,28 +785,28 @@ jQuery('document').ready(function(){
             $option =$this->configuration->get_option('peg_auto_clear');
             $this->make_settings_row(
                 __('Auto clear: both', 'peg'),
-                '<label><input type="checkbox" name="peg_auto_clear" value="1" ' . checked($option, '1', false) . ' /> ' . __('Automatically add &lt;p class="clear"&gt;&lt;/p&gt; after groups of images inserted together', 'peg') . '</label> '
+                '<label><input type="checkbox" id="peg_auto_clear" name="peg_general_settings[peg_auto_clear]" value="1" ' . checked($option, '1', false) . ' /> ' . __('Automatically add &lt;p class="clear"&gt;&lt;/p&gt; after groups of images inserted together', 'peg') . '</label> '
             );
 
             $this->make_settings_row(
                 __('Image CSS class', 'peg'),
-                '<input type="text" name="peg_img_css" class="regular-text" value="' . esc_attr($this->configuration->get_option('peg_img_css')) . '"/>',
+                '<input type="text" id="peg_img_css" name="peg_general_settings[peg_img_css]" class="regular-text" value="' . esc_attr($this->configuration->get_option('peg_img_css')) . '"/>',
                 __("You can define one or more classes for img tags", 'peg')
             );
             $this->make_settings_row(
                 __('Image style', 'peg'),
-                '<input type="text" name="peg_img_style" class="regular-text" value="' . esc_attr($this->configuration->get_option('peg_img_style')) . '"/>',
+                '<input type="text" id="peg_img_style" name="peg_general_settings[peg_img_style]" class="regular-text" value="' . esc_attr($this->configuration->get_option('peg_img_style')) . '"/>',
                 __('You can hardcode any css attributes for the img tags', 'peg')
             );
 
             $this->make_settings_row(
                 __('Image A CSS class', 'peg'),
-                '<input type="text" name="peg_a_img_css" class="regular-text" value="' . esc_attr($this->configuration->get_option('peg_a_img_css')) . '"/>',
+                '<input type="text" id="peg_a_img_css" name="peg_general_settings[peg_a_img_css]" class="regular-text" value="' . esc_attr($this->configuration->get_option('peg_a_img_css')) . '"/>',
                 __("You can define one or more classes for the a tags wrapping the img tags", 'peg')
             );
             $this->make_settings_row(
                 __('Image A style', 'peg'),
-                '<input type="text" name="peg_a_img_style" class="regular-text" value="' . esc_attr($this->configuration->get_option('peg_a_img_style')) . '"/>',
+                '<input type="text" id="peg_a_img_style" name="peg_general_settings[peg_a_img_style]" class="regular-text" value="' . esc_attr($this->configuration->get_option('peg_a_img_style')) . '"/>',
                 __('You can hardcode any css attributes for the a tags wrapping the img tags', 'peg')
             );
 
@@ -809,7 +817,7 @@ jQuery('document').ready(function(){
                 $option =$this->configuration->get_option('peg_return_single_image_html');
                 $this->make_settings_row(
                     __('Return HTML instead of shortcode', 'peg'),
-                    '<label><input type="checkbox" name="peg_return_single_image_html" value="1" ' . checked($option, '1', false) . ' /> ' . __('Return HTML for images selected from the dialog instead of the [peg-image] shortcode', 'peg') . '</label> ',
+                    '<label><input type="checkbox" id="peg_return_single_image_html" name="peg_general_settings[peg_return_single_image_html]" value="1" ' . checked($option, '1', false) . ' /> ' . __('Return HTML for images selected from the dialog instead of the [peg-image] shortcode', 'peg') . '</label> ',
                     __('NOTE: Enabling this feature limits the ability of this plugin to update old posts when image size options are updated or if Google\'s migration from Picasaweb to Google+ breaks existing URLs', 'peg')
                 );
             }// end if we're on main settings page
@@ -826,24 +834,24 @@ jQuery('document').ready(function(){
             // album format / thumbnail size
             $this->make_settings_row(
                 __('Album format', 'peg'),
-                '<label><input type="radio" name="peg_gal_format" value="phototile" ' . ($this->configuration->get_option('peg_phototile') != null ? 'checked="checked"' : '') . ' /> ' . __('Use the Google+ phototile style for album layout and thumbnail size selection', 'peg') . '</label>' .
+                '<label><input type="radio" id="peg_gal_format_phototile" name="peg_general_settings[peg_gal_format]" value="phototile" ' . ($this->configuration->get_option('peg_phototile') != null ? 'checked="checked"' : '') . ' /> ' . __('Use the Google+ phototile style for album layout and thumbnail size selection', 'peg') . '</label>' .
                 '<div id="peg_phototile_container"><br/> &nbsp; &nbsp; &nbsp; <label for="peg_phototile" style="vertical-align: top;">' . __('Phototile album width:', 'peg') . '</label>' .
-                '<div style="display: inline-block;"><input type="text" name="peg_phototile" id="peg_phototile" class="regular-text" value="' . esc_attr($this->configuration->get_option('peg_phototile')) . '" size="6" maxlength="10" style="width: 50px;" />px; &nbsp; &nbsp; (' . __('Example: 600px;', 'peg') . ')<br/><span style="font-size: 9px;">' . __('This is used to to calculate how much room thumbnails can consume', 'peg') . '<br/>' . __('NOTE: By enabling the phototile option, gallery alignment and caption display are disabled', 'peg') . '</span></div></div>' .
-                '<br/><label><input type="radio" name="peg_gal_format" value="standard" ' . ($this->configuration->get_option('peg_phototile') == null ? 'checked="checked"' : '') . ' /> ' . __('Use default thumbnail size configured using the <a href="options-media.php">Settings-&gt;Media</a> page.', 'peg') . '</label>'
+                '<div style="display: inline-block;"><input type="text" id="peg_phototile" name="peg_general_settings[peg_phototile]" class="regular-text" value="' . esc_attr($this->configuration->get_option('peg_phototile')) . '" size="6" maxlength="10" style="width: 50px;" />px; &nbsp; &nbsp; (' . __('Example: 600px;', 'peg') . ')<br/><span style="font-size: 9px;">' . __('This is used to to calculate how much room thumbnails can consume', 'peg') . '<br/>' . __('NOTE: By enabling the phototile option, gallery alignment and caption display are disabled', 'peg') . '</span></div></div>' .
+                '<br/><label><input type="radio" id="peg_gal_format_standard" name="peg_general_settings[peg_gal_format]" value="standard" ' . ($this->configuration->get_option('peg_phototile') == null ? 'checked="checked"' : '') . ' /> ' . __('Use default thumbnail size configured using the <a href="options-media.php">Settings-&gt;Media</a> page.', 'peg') . '</label>'
             );
 
             // script for enabling phototile input / clearing its value
             ?><script>
 function peg_toggle_phototile_option(){
 	// get the selected value of the selection box
-	var val = jQuery('input[name=peg_gal_format]:checked').val();
+	var val = jQuery('input[name=peg_general_settings\\[peg_gal_format\\]]:checked').val();
 	if(val == 'phototile'){
 		// show the phototile option
 		jQuery('#peg_phototile_container').show();
 
 		// hide the other options that are no longer allowed to be
 		// set
-		jQuery('#peg_caption').hide();
+		jQuery('#peg_caption_row').hide();
 		jQuery('tr.peg_caption_child').hide();
 		jQuery('#peg_gal_align').hide();
 	}else{
@@ -853,18 +861,18 @@ function peg_toggle_phototile_option(){
 
 		// show the other options that can now be set
 		jQuery('#peg_gal_align').show();
-		jQuery('#peg_caption').show();
+		jQuery('#peg_caption_row').show();
 
 		// determine if we should show the caption children
 		// or not, based on the caption checkbox
-		var val = jQuery('input[name=peg_caption]:checked').val();
+		var val = jQuery('#peg_caption:checked').val();
 		if(val == '1'){
 			// we can show them
 			jQuery('tr.peg_caption_child').show();
 		}
 	}
 }// end function peg_toggle_phototile_option()
-jQuery('input[name=peg_gal_format]').click(function(){
+jQuery('input[name=peg_general_settings\\[peg_gal_format\\]]').click(function(){
 	// execute the toggle for large image link options on ready
 	peg_toggle_phototile_option();
 });
@@ -879,24 +887,24 @@ jQuery('document').ready(function(){
             // display tag options
             $this->make_settings_row(
                 __('Photo tag options', 'peg'),
-                '<input name="peg_featured_tag" type="checkbox" id="peg_featured_tag" value="1" ' . checked('1', get_option('peg_featured_tag'), false) . '/> ' .
+                '<input id="peg_featured_tag" name="peg_general_settings[peg_featured_tag]" type="checkbox" value="1" ' . checked('1', $this->configuration->get_option('peg_featured_tag'), false) . '/> ' .
                 '<label for="peg_featured_tag">' . __('Include photos from albums only if they contain the "Featured" tag') . '</label><br />' .
                 '<label for="peg_additional_tags" style="vertical-align: top;">' . __('Additional tag(s) required') . '</label> ' .
-                '<div style="display: inline-block;"><input type="text" name="peg_additional_tags" id="peg_additional_tags" class="regular-text" value="' . esc_attr($this->configuration->get_option('peg_additional_tags')) . '"/><br/><span style="font-size: 9px;">' . __('Separate multiple tags by commas.  NOTE: currently Google requires private album access for tags to work') . '</span></div>'
+                '<div style="display: inline-block;"><input type="text" id="peg_additional_tags" name="peg_general_settings[peg_additional_tags]" class="regular-text" value="' . esc_attr($this->configuration->get_option('peg_additional_tags')) . '"/><br/><span style="font-size: 9px;">' . __('Separate multiple tags by commas.  NOTE: currently Google requires private album access for tags to work') . '</span></div>'
             );
 
             // ---------------------------------------------------------------------
             // remaining gallery options
             $this->make_settings_row(
                 __('Selection order', 'peg'),
-                '<label><input type="checkbox" name="peg_gal_order" value="1" ' . checked($this->configuration->get_option('peg_gal_order'), '1', false) . ' /> ' . __("Click images in your preferred order", 'peg') . '</label>'
+                '<label><input type="checkbox" id="peg_gal_order" name="peg_general_settings[peg_gal_order]" value="1" ' . checked($this->configuration->get_option('peg_gal_order'), '1', false) . ' /> ' . __("Click images in your preferred order", 'peg') . '</label>'
             );
 
             $option =$this->configuration->get_option('peg_gal_align');
             $out = '';
             foreach ($opts as $key => $val) {
-                $out .= "<input type=\"radio\" name=\"peg_gal_align\" id=\"gal-align$key\" value=\"$key\" " . checked($option, $key, false) . " /> ";
-                $out .= "<label for=\"gal-align$key\" style=\"padding-left:22px;margin-right:13px;\" class=\"image-align-$key-label\">$val</label>";
+                $out .= "<input type=\"radio\" id=\"peg_gal_align_$key\" name=\"peg_general_settings[peg_gal_align]\" value=\"$key\" " . checked($option, $key, false) . " /> ";
+                $out .= "<label for=\"peg_gal_align_$key\" style=\"padding-left:22px;margin-right:13px;\" class=\"image-align-$key-label\">$val</label>";
             }
             $this->make_settings_row(
                 __('Gallery alignment', 'peg'),
@@ -907,12 +915,12 @@ jQuery('document').ready(function(){
 
             $this->make_settings_row(
                 __('Gallery CSS class', 'peg'),
-                '<input type="text" name="peg_gal_css" class="regular-text" value="' . esc_attr($this->configuration->get_option('peg_gal_css')) . '"/>',
+                '<input type="text" id="peg_gal_css" name="peg_general_settings[peg_gal_css]" class="regular-text" value="' . esc_attr($this->configuration->get_option('peg_gal_css')) . '"/>',
                 __("You can define one or more classes for the gallery container tag", 'peg')
             );
             $this->make_settings_row(
                 __('Gallery style', 'peg'),
-                '<input type="text" name="peg_gal_style" class="regular-text" value="' . esc_attr($this->configuration->get_option('peg_gal_style')) . '"/>',
+                '<input type="text" id="peg_gal_style" name="peg_general_settings[peg_gal_style]" class="regular-text" value="' . esc_attr($this->configuration->get_option('peg_gal_style')) . '"/>',
                 __('You can hardcode any css attributes for the gallery container tag', 'peg')
             );
             ?>
@@ -920,10 +928,25 @@ jQuery('document').ready(function(){
 				</table>
 <?php
             // check to see if we're on the main settings page, and if so add the last
-            // section for advertising
+            // section for advanced and advertising
             if ($settings) {
                 // we're on main settings, add the remaining entries
                 ?>
+	            <h3><?php _e('Advanced', 'peg') ?></h3>
+	            <table class="peg-form-table">
+		            <?php
+		            $this->make_settings_row(__('Caching','peg'),
+			            '<label><input type="checkbox" id="peg_cache_activated" name="peg_general_settings[peg_cache_activated]" value="1" '. checked($this->configuration->get_option('peg_cache_activated'), '1', false) . ' />'. __('Enable Caching of Google Album feeds','peg') .'</label>',
+			            __('If activated, the answers to google API calls for albums will be cached. This dramatically increases the time to load a page with a lot of galleries. If this option is set, it will take some time for new pictures to appear in an album gallery that has already been cached. You can always reset the cache for a certain post/site by republishing the content.', 'peg'));
+		            $this->make_settings_row(__('Cache expires', 'peg'),
+			            '<input type="text" id="peg_cache_expiration_time" name="peg_general_settings[peg_cache_expiration_time]" value="'.$this->configuration->get_option('peg_cache_expiration_time').'" />'
+			            , __('The time in seconds after which a cached album feed should at least be refreshed. \'0\' means that album feeds do not need to be refreshed.', 'peg')
+		            );
+		            $this->make_settings_row(__('SSL','peg'),
+			            '<label><input type="checkbox" id="peg_force_ssl" name="peg_general_settings[peg_force_ssl]" value="1"' . checked($this->configuration->get_option('peg_force_ssl'), '1', false) . ' />' . __('Force SSL for all connections to Google Photos','peg') .'</label>',
+			            __('If activated, all requests to the google photo server will be send over SSL (https). If you disable this setting, your private access tokens for Google Photo will be send over an insecure connection to Google.'));
+		            ?>
+	            </table>
                 <h3><?php _e('Advertising', 'peg') ?></h3>
 
                 <table class="peg-form-table">
@@ -931,12 +954,13 @@ jQuery('document').ready(function(){
                     <?php
                     $this->make_settings_row(
                         __('Footer link', 'peg'),
-                        '<label><input type="checkbox" name="peg_footer_link" value="1" ' . checked($this->configuration->get_option('peg_footer_link'), '1', false) . ' /> ' . __('Enable footer link "With Google+ plugin by Geoff Janes and Thorsten Hake"', 'peg') . '</label>'
+                        '<label><input type="checkbox" id="peg_footer_link" name="peg_general_settings[peg_footer_link]" value="1" ' . checked($this->configuration->get_option('peg_footer_link'), '1', false) . ' /> ' . __('Enable footer link "With Google+ plugin by Geoff Janes and Thorsten Hake"', 'peg') . '</label>'
                     );
 
                     ?>
 
                 </table>
+
             <?php
             }// end if we're on main settings page
         }// end function peg_shared_options(..)
