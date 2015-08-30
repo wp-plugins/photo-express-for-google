@@ -5,6 +5,7 @@ if ( !defined( 'WP_UNINSTALL_PLUGIN' ) )
 	exit();
 
 require_once plugin_dir_path(__FILE__).'class-google-photo-access.php';
+require_once plugin_dir_path(__FILE__).'class-simple-cache.php';
 require_once plugin_dir_path(__FILE__).'class-settings-storage.php';
 
 //uninstalls the plugin and delete all options / revoking oauth access

@@ -200,6 +200,10 @@ small-thumbnail gallery.
 * Add the button to Visual toolbar of Tiny editor in full screen mode
 * Work with Google to correct tag searching index issues which cause tag searches to return unexpected results.
 
+= 0.3.2 =
+* Fixed another issue while uninstalling
+* Fixed image browser not showing new albums when caching is activated.
+
 = 0.3.1 =
 * Fixed issue while uninstalling the plugin
 * Fixed issues when upgrading the plugin
